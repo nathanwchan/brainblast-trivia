@@ -11,7 +11,7 @@ class CloudKitManager: ObservableObject {
     
     @Published var currentUser: User?
     @Published var isAuthenticated = false
-    @Published var containerStatus: String = "Unknown"
+    @Published var containerStatus: String?
     
     // Add cache for user names
     private var userNameCache: [String: String] = [:]
@@ -44,7 +44,7 @@ class CloudKitManager: ObservableObject {
         DispatchQueue.main.async {
             switch status {
             case .available:
-                self.containerStatus = "iCloud Status: Available"
+                self.containerStatus = nil // "iCloud Status: Available"
             case .noAccount:
                 self.containerStatus = "Error: No iCloud account"
             case .restricted:

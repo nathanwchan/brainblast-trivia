@@ -2,7 +2,7 @@ import Foundation
 import CloudKit
 
 struct TriviaQuestion: Identifiable {
-    let id: UUID  
+    let id: UUID
     let question: String
     let answer: String
     let options: [String]

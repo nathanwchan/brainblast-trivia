@@ -12,26 +12,28 @@ struct LoginView: View {
                 .font(.title)
                 .multilineTextAlignment(.center)
             
-            Text(cloudKit.containerStatus)
-                .font(.caption)
-                .foregroundColor(.gray)
-                .padding(.bottom)
-            
-            TextField("Enter your name", text: $username)
-                .textFieldStyle(RoundedBorderTextFieldStyle())
-                .padding()
-            
-            if isLoading {
-                ProgressView()
+            if let status = cloudKit.containerStatus {
+                Text(status)
+                    .font(.caption)
+                    .foregroundColor(.gray)
+                    .padding(.bottom)
             } else {
-                Button("Continue") {
-                    login()
+                TextField("Enter your name", text: $username)
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                    .padding()
+                
+                if isLoading {
+                    ProgressView()
+                } else {
+                    Button("Continue") {
+                        login()
+                    }
+                    .disabled(username.isEmpty)
+                    .padding()
+                    .background(username.isEmpty ? Color.gray : Color.blue)
+                    .foregroundColor(.white)
+                    .cornerRadius(10)
                 }
-                .disabled(username.isEmpty)
-                .padding()
-                .background(username.isEmpty ? Color.gray : Color.blue)
-                .foregroundColor(.white)
-                .cornerRadius(10)
             }
             
             if let error = errorMessage {

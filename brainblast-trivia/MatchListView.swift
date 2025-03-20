@@ -22,11 +22,17 @@ struct MatchListView: View {
                     }
                 }) {
                     HStack {
-                        if match.player1ID == cloudKit.currentUser?.id {
-                            Text("Your game")
-                                .foregroundColor(.blue)
+                        if match.player1ID == cloudKit.currentUser?.id && match.player2ID == nil {
+                            Text("Waiting on an opponent...")
+                                .foregroundColor(.red)
+                        } else if match.player1ID == cloudKit.currentUser?.id {
+                            Text("You x \(userNames[match.player2ID!] ?? "someone") —\u{00A0}It's \(match.isPlayer1Turn ? "your turn!" : "their turn...")")
+                                .foregroundColor(match.isPlayer1Turn ? .green : .blue)
+                        } else if match.player2ID == cloudKit.currentUser?.id {
+                            Text("You x \(userNames[match.player1ID] ?? "someone") —\u{00A0}It's \(!match.isPlayer1Turn ? "your turn!" : "their turn...")")
+                                .foregroundColor(!match.isPlayer1Turn ? .green : .blue)
                         } else {
-                            Text(userNames[match.player1ID] ?? "Loading...")
+                            Text("Available to join \(userNames[match.player1ID] ?? "someone")'s match")
                                 .foregroundColor(.green)
                         }
                         Spacer()
@@ -66,7 +72,6 @@ struct MatchListView: View {
                 Text("This will delete all matches in the game. This action cannot be undone.")
             }
             .task {
-                // Load all matches and usernames when view appears
                 do {
                     let matches = try await cloudKit.fetchOpenMatches()
                     gameState.availableMatches = matches
