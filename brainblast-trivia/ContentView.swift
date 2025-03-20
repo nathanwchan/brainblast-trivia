@@ -23,38 +23,107 @@ struct ContentView: View {
         NavigationView {
             if gameState.currentMatch == nil {
                 VStack {
-                    Text("Welcome, \(cloudKit.currentUser?.name ?? "")!")
-                        .font(.title)
-                        .padding()
+                    HStack {
+                        Text(cloudKit.currentUser?.name ?? "")
+                            .font(.title)
+                        
+                        Spacer()
+                        
+                        Button("Logout") {
+                            cloudKit.logout()
+                        }
+                        .foregroundColor(.red)
+                    }
+                    .padding()
+                    
+                    Spacer()
                     
                     Button("Start New Game") {
                         Task {
                             try? await gameState.startNewGame()
                         }
                     }
-                    .padding()
+                    .padding(.horizontal, 40)
+                    .padding(.vertical, 15)
                     .background(Color.blue)
                     .foregroundColor(.white)
                     .cornerRadius(10)
+                    .font(.title2)
                     
-                    Button("Join Game") {
-                        showingMatches = true
-                    }
-                    .padding()
-                    .background(Color.green)
-                    .foregroundColor(.white)
-                    .cornerRadius(10)
+                    Spacer()
                     
-                    Button("Logout") {
-                        cloudKit.logout()
+                    HStack {
+                        Text("Available Matches")
+                            .font(.headline)
+                        
+                        Spacer()
+                        
+                        Button(action: {
+                            Task {
+                                do {
+                                    let matches = try await cloudKit.fetchOpenMatches()
+                                    gameState.availableMatches = matches
+                                    await gameState.fetchUserNames(for: matches)
+                                } catch {
+                                    print("Error loading matches: \(error)")
+                                }
+                            }
+                        }) {
+                            Image(systemName: "arrow.clockwise")
+                                .foregroundColor(.blue)
+                        }
                     }
-                    .padding()
-                    .background(Color.red)
-                    .foregroundColor(.white)
-                    .cornerRadius(10)
+                    .padding(.horizontal)
+                    
+                    ScrollView {
+                        LazyVStack(spacing: 8) {
+                            ForEach(gameState.availableMatches) { match in
+                                Button(action: {
+                                    Task {
+                                        do {
+                                            try await gameState.joinMatch(match)
+                                        } catch {
+                                            print("Error joining match: \(error)")
+                                        }
+                                    }
+                                }) {
+                                    HStack {
+                                        if match.player1ID == cloudKit.currentUser?.id && match.player2ID == nil {
+                                            Text("Waiting on an opponent...")
+                                                .foregroundColor(.red)
+                                        } else if match.player1ID == cloudKit.currentUser?.id {
+                                            Text("You x \(gameState.userNames[match.player2ID!] ?? "someone") —\u{00A0}It's \(match.isPlayer1Turn ? "your turn!" : "their turn...")")
+                                                .foregroundColor(match.isPlayer1Turn ? .green : .blue)
+                                        } else if match.player2ID == cloudKit.currentUser?.id {
+                                            Text("You x \(gameState.userNames[match.player1ID] ?? "someone") —\u{00A0}It's \(!match.isPlayer1Turn ? "your turn!" : "their turn...")")
+                                                .foregroundColor(!match.isPlayer1Turn ? .green : .blue)
+                                        } else {
+                                            Text("Available to join \(gameState.userNames[match.player1ID] ?? "someone")'s match")
+                                                .foregroundColor(.green)
+                                        }
+                                        Spacer()
+                                        Text("Round \(match.currentRound)")
+                                            .foregroundColor(.gray)
+                                    }
+                                    .padding(.horizontal)
+                                    .padding(.vertical, 8)
+                                    .background(Color.secondary.opacity(0.1))
+                                    .cornerRadius(8)
+                                }
+                            }
+                        }
+                        .padding(.horizontal)
+                    }
+                    .frame(height: UIScreen.main.bounds.height / 3)
                 }
-                .sheet(isPresented: $showingMatches) {
-                    MatchListView(gameState: gameState)
+                .task {
+                    do {
+                        let matches = try await cloudKit.fetchOpenMatches()
+                        gameState.availableMatches = matches
+                        await gameState.fetchUserNames(for: matches)
+                    } catch {
+                        print("Error loading matches: \(error)")
+                    }
                 }
             } else {
                 ZStack {

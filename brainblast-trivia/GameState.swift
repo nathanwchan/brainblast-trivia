@@ -16,6 +16,7 @@ class GameState: ObservableObject {
     @Published var isMyTurn = false
     @Published var showRoundResults = false
     @Published var roundWinner: Int?
+    @Published var userNames: [String: String] = [:]
     
     private let cloudKit = CloudKitManager.shared
     var questions: [TriviaQuestion]
@@ -97,9 +98,26 @@ class GameState: ObservableObject {
     private func loadAvailableMatches() async {
         do {
             let matches = try await cloudKit.fetchOpenMatches()
+            await fetchUserNames(for: matches)
             self.availableMatches = matches
         } catch {
             print("Error loading matches: \(error)")
+        }
+    }
+    
+    func fetchUserNames(for matches: [Match]) async {
+        for match in matches {
+            if userNames[match.player1ID] == nil {
+                if let name = await CloudKitManager.shared.getUserName(for: match.player1ID) {
+                    userNames[match.player1ID] = name
+                }
+            }
+            
+            if let player2ID = match.player2ID, userNames[player2ID] == nil {
+                if let name = await CloudKitManager.shared.getUserName(for: player2ID) {
+                    userNames[player2ID] = name
+                }
+            }
         }
     }
     
