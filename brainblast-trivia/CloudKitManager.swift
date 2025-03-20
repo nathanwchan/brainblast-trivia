@@ -17,6 +17,13 @@ class CloudKitManager: ObservableObject {
         self.container = CKContainer(identifier: "iCloud.com.natechan.brainblast-2")
         self.database = container.publicCloudDatabase
         
+        // Load saved user if exists
+        if let savedUserData = UserDefaults.standard.data(forKey: "currentUser"),
+           let savedUser = try? JSONDecoder().decode(User.self, from: savedUserData) {
+            self.currentUser = savedUser
+            self.isAuthenticated = true
+        }
+        
         // Verify container and setup schema
         Task {
             do {
@@ -82,27 +89,28 @@ class CloudKitManager: ObservableObject {
         do {
             let records = try await database.perform(query, inZoneWith: nil)
             
+            let user: User
             if let existingRecord = records.first {
-                let user = User(record: existingRecord)
-                DispatchQueue.main.async {
-                    self.currentUser = user
-                    self.isAuthenticated = true
-                }
-                return user
+                user = User(record: existingRecord)
+            } else {
+                // Create new user record
+                let newUserRecord = CKRecord(recordType: "User")
+                newUserRecord["name"] = name
+                
+                let savedRecord = try await database.save(newUserRecord)
+                user = User(record: savedRecord)
             }
             
-            // Create new user record
-            let newUserRecord = CKRecord(recordType: "User")
-            newUserRecord["name"] = name
-            
-            let savedRecord = try await database.save(newUserRecord)
-            let newUser = User(record: savedRecord)
+            // Save user to UserDefaults
+            if let encodedUser = try? JSONEncoder().encode(user) {
+                UserDefaults.standard.set(encodedUser, forKey: "currentUser")
+            }
             
             DispatchQueue.main.async {
-                self.currentUser = newUser
+                self.currentUser = user
                 self.isAuthenticated = true
             }
-            return newUser
+            return user
         } catch {
             print("Authentication error: \(error)")
             throw error
@@ -159,6 +167,7 @@ class CloudKitManager: ObservableObject {
         DispatchQueue.main.async {
             self.currentUser = nil
             self.isAuthenticated = false
+            UserDefaults.standard.removeObject(forKey: "currentUser")
         }
     }
 }
