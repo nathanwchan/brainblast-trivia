@@ -252,6 +252,11 @@ struct ContentView: View {
                                             .foregroundColor(submittedAnswer == question.answer ? .green : .red)
                                             .padding()
                                         
+                                        Text(String(format: "Your time: %.3f seconds", elapsedTime))
+                                            .font(.title2)
+                                            .foregroundColor(.blue)
+                                            .padding(.bottom)
+                                        
                                         Text(question.question)
                                             .font(.headline)
                                             .multilineTextAlignment(.center)
@@ -281,7 +286,7 @@ struct ContentView: View {
                                 }
                             } else {
                                 Spacer()
-                                Text("Waiting for another player...")
+                                Text("Waiting for an opponent...")
                                     .font(.title2)
                                 
                                 Button("Back to Menu") {

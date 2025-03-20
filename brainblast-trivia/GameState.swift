@@ -58,21 +58,28 @@ class GameState: ObservableObject {
             
             if let p1Answer = match.player1Answer, let p1Time = match.player1Time {
                 self.player1Answer = (p1Answer, p1Time)
-            }
-            if let p2Answer = match.player2Answer, let p2Time = match.player2Time {
-                self.player2Answer = (p2Answer, p2Time)
+            } else {
+                self.player1Answer = nil
             }
             
-            if isPlayer1 && match.player1Answer != nil && match.player2Answer != nil {
+            if let p2Answer = match.player2Answer, let p2Time = match.player2Time {
+                self.player2Answer = (p2Answer, p2Time)
+            } else {
+                self.player2Answer = nil
+            }
+            
+            if match.player1Answer != nil && match.player2Answer != nil {
                 let p1Correct = match.player1Answer == question.answer
                 let p2Correct = match.player2Answer == question.answer
                 
-                if p1Correct && p2Correct {
-                    roundWinner = match.player1Time! < match.player2Time! ? 1 : 2
+                if !p1Correct && !p2Correct {
+                    self.roundWinner = nil
+                } else if p1Correct && p2Correct {
+                    self.roundWinner = match.player1Time! < match.player2Time! ? 1 : 2
                 } else if p1Correct {
-                    roundWinner = 1
+                    self.roundWinner = 1
                 } else if p2Correct {
-                    roundWinner = 2
+                    self.roundWinner = 2
                 }
                 
                 self.showRoundResults = true

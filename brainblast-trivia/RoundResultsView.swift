@@ -5,14 +5,21 @@ struct RoundResultsView: View {
     @EnvironmentObject private var cloudKit: CloudKitManager
     @State private var player1Name = ""
     @State private var player2Name = ""
+    private let displayRound: Int
+    
+    init(gameState: GameState) {
+        self.gameState = gameState
+        self.displayRound = gameState.currentRound
+    }
     
     var body: some View {
         VStack(spacing: 20) {
-            Text("Round \(gameState.currentRound) Results")
+            Text("Round \(displayRound) Results")
                 .font(.title)
                 .padding()
             
-            if let question = gameState.currentQuestion {
+            if let question = gameState.currentQuestion,
+               let match = gameState.currentMatch {
                 Text(question.question)
                     .font(.headline)
                     .multilineTextAlignment(.center)
@@ -28,10 +35,11 @@ struct RoundResultsView: View {
                     Text(gameState.isPlayer1 ? "You" : player1Name)
                         .font(.headline)
                     
-                    if let p1 = gameState.player1Answer {
-                        Text("Answer: \(p1.answer)")
-                            .foregroundColor(p1.answer == question.answer ? .green : .red)
-                        Text(String(format: "Time: %.2f seconds", p1.time))
+                    if let p1Answer = match.player1Answer,
+                       let p1Time = match.player1Time {
+                        Text("Answer: \(p1Answer)")
+                            .foregroundColor(p1Answer == question.answer && gameState.roundWinner == 1 ? .green : .red)
+                        Text(String(format: "Time: %.2f seconds", p1Time))
                     } else {
                         Text("Waiting for answer...")
                             .foregroundColor(.gray)
@@ -52,10 +60,11 @@ struct RoundResultsView: View {
                     Text(!gameState.isPlayer1 ? "You" : player2Name)
                         .font(.headline)
                     
-                    if let p2 = gameState.player2Answer {
-                        Text("Answer: \(p2.answer)")
-                            .foregroundColor(p2.answer == question.answer ? .green : .red)
-                        Text(String(format: "Time: %.2f seconds", p2.time))
+                    if let p2Answer = match.player2Answer,
+                       let p2Time = match.player2Time {
+                        Text("Answer: \(p2Answer)")
+                            .foregroundColor(p2Answer == question.answer && gameState.roundWinner == 2 ? .green : .red)
+                        Text(String(format: "Time: %.2f seconds", p2Time))
                     } else {
                         Text("Waiting for answer...")
                             .foregroundColor(.gray)
@@ -70,28 +79,38 @@ struct RoundResultsView: View {
                                 .strokeBorder(gameState.roundWinner == 2 ? Color.green : Color.clear, lineWidth: 3)
                         )
                 )
-            }
-            
-            if let winner = gameState.roundWinner {
-                Text(
-                    (gameState.isPlayer1 && winner == 1) || (!gameState.isPlayer1 && winner == 2)
-                    ? "You won this round!"
-                    : "\(winner == 1 ? player1Name : player2Name) won this round!"
-                )
-                    .font(.title2)
-                    .foregroundColor(.green)
-                    .padding()
-            }
-            
-            Button("Continue") {
-                withAnimation {
-                    gameState.showRoundResults = false
+                
+                if let p1Answer = match.player1Answer,
+                   let p2Answer = match.player2Answer,
+                   p1Answer != question.answer && p2Answer != question.answer {
+                    Text("Round tied - both answers were incorrect")
+                        .font(.title2)
+                        .foregroundColor(.orange)
+                        .padding()
+                } else if let winner = gameState.roundWinner {
+                    Text(
+                        (gameState.isPlayer1 && winner == 1) || (!gameState.isPlayer1 && winner == 2)
+                        ? "You won this round!"
+                        : "\(winner == 1 ? player1Name : player2Name) won this round!"
+                    )
+                        .font(.title2)
+                        .foregroundColor(.green)
+                        .padding()
                 }
+                
+                Button("Continue") {
+                    Task {
+                        try? await gameState.completeRound()
+                        withAnimation {
+                            gameState.showRoundResults = false
+                        }
+                    }
+                }
+                .padding()
+                .background(Color.blue)
+                .foregroundColor(.white)
+                .cornerRadius(10)
             }
-            .padding()
-            .background(Color.blue)
-            .foregroundColor(.white)
-            .cornerRadius(10)
         }
         .padding()
         .background(Color.black.opacity(0.85))
