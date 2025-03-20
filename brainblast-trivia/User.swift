@@ -12,6 +12,9 @@ struct User: Identifiable, Codable {
         self.id = record["id"] as? String ?? record.recordID.recordName
         self.name = record["name"] as? String ?? ""
         self.recordID = record.recordID
+        
+        // Make sure to save the recordID to a queryable field
+        record["recordIDName"] = record.recordID.recordName
     }
     
     init(id: String, name: String) {
@@ -26,11 +29,11 @@ struct User: Identifiable, Codable {
         self.recordID = CKRecord.ID(recordName: id)
     }
     
-    // Add Codable conformance
+    // Update Codable conformance to use recordIDName
     enum CodingKeys: String, CodingKey {
         case id
         case name
-        case recordIDName = "recordID"
+        case recordIDName
     }
     
     func encode(to encoder: Encoder) throws {

@@ -169,6 +169,16 @@ class CloudKitManager: ObservableObject {
         return records.map { Match(record: $0) }
     }
     
+    func deleteAllMatches() async throws {
+        // First fetch open matches using our existing function
+        let matches = try await fetchOpenMatches()
+        
+        // Delete each match record individually
+        for match in matches {
+            try await database.deleteRecord(withID: match.recordID)
+        }
+    }
+    
     func logout() {
         DispatchQueue.main.async {
             self.currentUser = nil
@@ -183,7 +193,6 @@ class CloudKitManager: ObservableObject {
             return cachedName
         }
         
-        // Otherwise fetch from CloudKit
         do {
             let predicate = NSPredicate(format: "id == %@", userID)
             let query = CKQuery(recordType: "User", predicate: predicate)
@@ -197,9 +206,14 @@ class CloudKitManager: ObservableObject {
                 return name
             }
         } catch {
-            print("Error fetching user name: \(error)")
+            print("Error fetching user name for \(userID): \(error)")
         }
         
-        return nil
+        // Fallback: return a placeholder
+        let fallbackName = "Unknown"
+        DispatchQueue.main.async {
+            self.userNameCache[userID] = fallbackName
+        }
+        return fallbackName
     }
 }
