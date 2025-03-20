@@ -42,20 +42,11 @@ class GameState: ObservableObject {
     }
     
     func joinMatch(_ match: Match) async throws {
-        print("[GameState] Attempting to join match with ID: \(match.id)")
-        guard let currentUser = cloudKit.currentUser else {
-            print("[GameState] Error: No current user")
-            return
-        }
-        print("[GameState] Current user ID: \(currentUser.id)")
+        guard let currentUser = cloudKit.currentUser else { return }
         
         if match.player1ID == currentUser.id || match.player2ID == currentUser.id {
-            print("[GameState] Current user is player \(match.player1ID == currentUser.id ? "1" : "2")")
             guard let questionID = UUID(uuidString: match.currentQuestionID),
-                  let question = questions.first(where: { $0.id == questionID }) else {
-                print("[GameState] Error: Invalid question ID or question not found")
-                return
-            }
+                  let question = questions.first(where: { $0.id == questionID }) else { return }
             
             self.currentMatch = match
             self.currentQuestion = question
@@ -63,22 +54,36 @@ class GameState: ObservableObject {
             self.player1Score = match.player1Score
             self.player2Score = match.player2Score
             self.isMyTurn = match.player1ID == currentUser.id ? match.isPlayer1Turn : !match.isPlayer1Turn
-            print("[GameState] Successfully rejoined match")
-        } else if match.player2ID == nil {
-            print("[GameState] Attempting to join as player 2")
-            var updatedMatch = match
-            updatedMatch.player2ID = currentUser.id
-            print("[GameState] Setting player2ID to: \(currentUser.id)")
             
-            guard let questionID = UUID(uuidString: match.currentQuestionID),
-                  let question = questions.first(where: { $0.id == questionID }) else {
-                print("[GameState] Error: Invalid question ID or question not found")
-                return
+            if let p1Answer = match.player1Answer, let p1Time = match.player1Time {
+                self.player1Answer = (p1Answer, p1Time)
+            }
+            if let p2Answer = match.player2Answer, let p2Time = match.player2Time {
+                self.player2Answer = (p2Answer, p2Time)
             }
             
-            print("[GameState] Updating match in CloudKit...")
+            if isPlayer1 && match.player1Answer != nil && match.player2Answer != nil {
+                let p1Correct = match.player1Answer == question.answer
+                let p2Correct = match.player2Answer == question.answer
+                
+                if p1Correct && p2Correct {
+                    roundWinner = match.player1Time! < match.player2Time! ? 1 : 2
+                } else if p1Correct {
+                    roundWinner = 1
+                } else if p2Correct {
+                    roundWinner = 2
+                }
+                
+                self.showRoundResults = true
+            }
+        } else if match.player2ID == nil {
+            var updatedMatch = match
+            updatedMatch.player2ID = currentUser.id
+            
+            guard let questionID = UUID(uuidString: match.currentQuestionID),
+                  let question = questions.first(where: { $0.id == questionID }) else { return }
+            
             try await cloudKit.updateMatch(updatedMatch)
-            print("[GameState] Match updated successfully")
             
             self.currentMatch = updatedMatch
             self.currentQuestion = question
@@ -86,9 +91,6 @@ class GameState: ObservableObject {
             self.player1Score = match.player1Score
             self.player2Score = match.player2Score
             self.isMyTurn = !match.isPlayer1Turn
-            print("[GameState] Successfully joined as player 2")
-        } else {
-            print("[GameState] Cannot join match: user is neither player 1 nor player 2")
         }
     }
     
@@ -137,31 +139,46 @@ class GameState: ObservableObject {
             
             player1Score = match.player1Score
             player2Score = match.player2Score
-            
-            if match.player1Score >= 3 || match.player2Score >= 3 {
-                match.isCompleted = true
-                winner = match.player1Score >= 3 ? 1 : 2
-                isGameOver = true
-            } else {
-                match.currentRound += 1
-                currentRound = match.currentRound
-                selectNewQuestion()
-                match.currentQuestionID = currentQuestion?.id.uuidString ?? ""
-                match.previousQuestions.append(match.currentQuestionID)
-                
-                player1Answer = nil
-                player2Answer = nil
-                roundWinner = nil
-            }
         }
         
         try await cloudKit.updateMatch(match)
         
         self.currentMatch = match
         self.isMyTurn = self.isPlayer1 ? !match.isPlayer1Turn : match.isPlayer1Turn
+
         if !self.isPlayer1 {
             self.showRoundResults = true
         }
+    }
+    
+    func completeRound() async throws {
+        guard var match = currentMatch else { return }
+        
+        match.player1Answer = nil
+        match.player2Answer = nil
+        match.player1Time = nil
+        match.player2Time = nil
+        
+        player1Answer = nil
+        player2Answer = nil
+        roundWinner = nil
+        
+        if match.player1Score >= 3 || match.player2Score >= 3 {
+            match.isCompleted = true
+            winner = match.player1Score >= 3 ? 1 : 2
+            isGameOver = true
+        } else {
+            match.currentRound += 1
+            currentRound = match.currentRound
+            selectNewQuestion()
+            if let newQuestion = currentQuestion {
+                match.currentQuestionID = newQuestion.id.uuidString
+                match.previousQuestions.append(match.currentQuestionID)
+            }
+        }
+        
+        try await cloudKit.updateMatch(match)
+        self.currentMatch = match
     }
     
     func selectNewQuestion() {

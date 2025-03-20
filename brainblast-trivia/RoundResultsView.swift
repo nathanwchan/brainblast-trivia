@@ -2,7 +2,9 @@ import SwiftUI
 
 struct RoundResultsView: View {
     @ObservedObject var gameState: GameState
-
+    @State private var player1Name = ""
+    @State private var player2Name = ""
+    
     var body: some View {
         VStack(spacing: 20) {
             Text("Round \(gameState.currentRound) Results")
@@ -13,39 +15,66 @@ struct RoundResultsView: View {
                 Text(question.question)
                     .font(.headline)
                     .multilineTextAlignment(.center)
+                    .padding(.horizontal)
                 
                 Text("Correct Answer: \(question.answer)")
-                    .font(.subheadline)
+                    .font(.title3)
+                    .foregroundColor(.green)
                     .padding()
                 
-                if let p1 = gameState.player1Answer {
-                    VStack {
-                        Text("Player 1")
-                            .font(.headline)
+                // Player 1 Answer Section
+                VStack {
+                    Text(player1Name)
+                        .font(.headline)
+                    
+                    if let p1 = gameState.player1Answer {
                         Text("Answer: \(p1.answer)")
-                        Text(String(format: "Time: %.3f seconds", p1.time))
+                            .foregroundColor(p1.answer == question.answer ? .green : .red)
+                        Text(String(format: "Time: %.2f seconds", p1.time))
+                    } else {
+                        Text("Waiting for answer...")
+                            .foregroundColor(.gray)
                     }
-                    .padding()
-                    .background(Color.blue.opacity(0.1))
-                    .cornerRadius(10)
                 }
+                .padding()
+                .background(
+                    RoundedRectangle(cornerRadius: 10)
+                        .fill(Color.blue.opacity(0.1))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 10)
+                                .strokeBorder(gameState.roundWinner == 1 ? Color.green : Color.clear, lineWidth: 3)
+                        )
+                )
                 
-                if let p2 = gameState.player2Answer {
-                    VStack {
-                        Text("Player 2")
-                            .font(.headline)
+                // Player 2 Answer Section
+                VStack {
+                    Text(player2Name)
+                        .font(.headline)
+                    
+                    if let p2 = gameState.player2Answer {
                         Text("Answer: \(p2.answer)")
-                        Text(String(format: "Time: %.3f seconds", p2.time))
+                            .foregroundColor(p2.answer == question.answer ? .green : .red)
+                        Text(String(format: "Time: %.2f seconds", p2.time))
+                    } else {
+                        Text("Waiting for answer...")
+                            .foregroundColor(.gray)
                     }
-                    .padding()
-                    .background(Color.green.opacity(0.1))
-                    .cornerRadius(10)
                 }
+                .padding()
+                .background(
+                    RoundedRectangle(cornerRadius: 10)
+                        .fill(Color.green.opacity(0.1))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 10)
+                                .strokeBorder(gameState.roundWinner == 2 ? Color.green : Color.clear, lineWidth: 3)
+                        )
+                )
             }
             
             if let winner = gameState.roundWinner {
-                Text("Round Winner: Player \(winner)")
+                Text("\(winner == 1 ? player1Name : player2Name) wins this round!")
                     .font(.title2)
+                    .foregroundColor(.green)
                     .padding()
             }
             
@@ -60,5 +89,16 @@ struct RoundResultsView: View {
             .cornerRadius(10)
         }
         .padding()
+        .task {
+            // Load player names
+            if let match = gameState.currentMatch {
+                player1Name = await CloudKitManager.shared.getUserName(for: match.player1ID) ?? "Player 1"
+                if let player2ID = match.player2ID {
+                    player2Name = await CloudKitManager.shared.getUserName(for: player2ID) ?? "Player 2"
+                } else {
+                    player2Name = "Player 2"
+                }
+            }
+        }
     }
 }

@@ -201,34 +201,36 @@ class CloudKitManager: ObservableObject {
     }
     
     func getUserName(for userID: String) async -> String? {
-        // Return from cache if available
-        if let cachedName = userNameCache[userID] {
-            return cachedName
-        }
-        
-        do {
-            let predicate = NSPredicate(format: "id == %@", userID)
-            let query = CKQuery(recordType: "User", predicate: predicate)
-            
-            let result = try await database.records(matching: query)
-            let records = result.matchResults.compactMap { try? $0.1.get() }
-            
-            if let record = records.first,
-               let name = record["name"] as? String {
-                DispatchQueue.main.async {
-                    self.userNameCache[userID] = name
-                }
-                return name
+            // Return from cache if available
+            if let cachedName = userNameCache[userID] {
+                return cachedName
             }
-        } catch {
-            print("Error fetching user name for \(userID): \(error)")
-        }
-        
-        // Fallback: return a placeholder
-        let fallbackName = "Unknown"
-        DispatchQueue.main.async {
-            self.userNameCache[userID] = fallbackName
-        }
-        return fallbackName
+            
+            do {
+                let predicate = NSPredicate(format: "id == %@", userID)
+                let query = CKQuery(recordType: "User", predicate: predicate)
+                
+                let result = try await database.records(matching: query)
+                let records = result.matchResults.compactMap { try? $0.1.get() }
+                
+                if let record = records.first,
+                   let name = record["name"] as? String {
+                    DispatchQueue.main.async {
+                        self.userNameCache[userID] = name
+                    }
+                    return name
+                } else {
+                    print("[CloudKit] No valid name found in records")
+                }
+            } catch {
+                print("[CloudKit] Error fetching user name for \(userID): \(error)")
+            }
+            
+            // Fallback: return a placeholder
+            let fallbackName = "Unknown"
+            DispatchQueue.main.async {
+                self.userNameCache[userID] = fallbackName
+            }
+            return fallbackName
     }
 }

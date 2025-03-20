@@ -79,7 +79,15 @@ struct MatchListView: View {
                     for match in matches {
                         if userNames[match.player1ID] == nil {
                             if let name = await cloudKit.getUserName(for: match.player1ID) {
+                                print("nate player1ID", name)
                                 userNames[match.player1ID] = name
+                            }
+                        }
+                        
+                        if let player2ID = match.player2ID, userNames[player2ID] == nil {
+                            if let name = await cloudKit.getUserName(for: player2ID) {
+                                print("nate player2ID", name)
+                                userNames[player2ID] = name
                             }
                         }
                     }
