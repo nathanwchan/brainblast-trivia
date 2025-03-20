@@ -226,8 +226,10 @@ struct ContentView: View {
         let timeInterval = Date().timeIntervalSince(start)
         timer?.cancel()
         
-        withAnimation {
-            showingAnswerConfirmation = true
+        await MainActor.run {
+            withAnimation {
+                showingAnswerConfirmation = true
+            }
         }
         
         try? await gameState.submitAnswer(answer: answer, time: timeInterval)

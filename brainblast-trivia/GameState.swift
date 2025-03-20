@@ -1,6 +1,7 @@
 import Foundation
 import CloudKit
 
+@MainActor
 class GameState: ObservableObject {
     @Published var currentRound = 1
     @Published var player1Score = 0
@@ -36,10 +37,8 @@ class GameState: ObservableObject {
         selectNewQuestion()
         guard let question = currentQuestion else { return }
         let match = try await cloudKit.createMatch(questionID: question.id.uuidString)
-        DispatchQueue.main.async {
-            self.currentMatch = match
-            self.isMyTurn = true
-        }
+        self.currentMatch = match
+        self.isMyTurn = true
     }
     
     func joinMatch(_ match: Match) async throws {
@@ -49,14 +48,12 @@ class GameState: ObservableObject {
             guard let questionID = UUID(uuidString: match.currentQuestionID),
                   let question = questions.first(where: { $0.id == questionID }) else { return }
             
-            DispatchQueue.main.async {
-                self.currentMatch = match
-                self.currentQuestion = question
-                self.currentRound = match.currentRound
-                self.player1Score = match.player1Score
-                self.player2Score = match.player2Score
-                self.isMyTurn = match.isPlayer1Turn
-            }
+            self.currentMatch = match
+            self.currentQuestion = question
+            self.currentRound = match.currentRound
+            self.player1Score = match.player1Score
+            self.player2Score = match.player2Score
+            self.isMyTurn = match.isPlayer1Turn
             return
         }
         
@@ -68,32 +65,20 @@ class GameState: ObservableObject {
         
         try await cloudKit.updateMatch(updatedMatch)
         
-        DispatchQueue.main.async {
-            self.currentMatch = updatedMatch
-            self.currentQuestion = question
-            self.currentRound = match.currentRound
-            self.player1Score = match.player1Score
-            self.player2Score = match.player2Score
-            self.isMyTurn = !match.isPlayer1Turn
-        }
+        self.currentMatch = updatedMatch
+        self.currentQuestion = question
+        self.currentRound = match.currentRound
+        self.player1Score = match.player1Score
+        self.player2Score = match.player2Score
+        self.isMyTurn = !match.isPlayer1Turn
     }
     
     private func loadAvailableMatches() async {
         do {
             let matches = try await cloudKit.fetchOpenMatches()
-            DispatchQueue.main.async {
-                self.availableMatches = matches
-            }
+            self.availableMatches = matches
         } catch {
             print("Error loading matches: \(error)")
-        }
-    }
-    
-    func selectNewQuestion() {
-        let availableQuestions = questions.filter { !usedQuestions.contains($0.id) }
-        if let question = availableQuestions.randomElement() {
-            currentQuestion = question
-            usedQuestions.insert(question.id)
         }
     }
     
@@ -153,12 +138,18 @@ class GameState: ObservableObject {
         
         try await cloudKit.updateMatch(match)
         
-        DispatchQueue.main.async {
-            self.currentMatch = match
-            self.isMyTurn = self.isPlayer1 ? !match.isPlayer1Turn : match.isPlayer1Turn
-            if !self.isPlayer1 {
-                self.showRoundResults = true
-            }
+        self.currentMatch = match
+        self.isMyTurn = self.isPlayer1 ? !match.isPlayer1Turn : match.isPlayer1Turn
+        if !self.isPlayer1 {
+            self.showRoundResults = true
+        }
+    }
+    
+    func selectNewQuestion() {
+        let availableQuestions = questions.filter { !usedQuestions.contains($0.id) }
+        if let question = availableQuestions.randomElement() {
+            currentQuestion = question
+            usedQuestions.insert(question.id)
         }
     }
 }
