@@ -51,6 +51,8 @@ class CloudKitManager: ObservableObject {
                 self.containerStatus = "Error: iCloud restricted"
             case .couldNotDetermine:
                 self.containerStatus = "Error: Could not determine iCloud status"
+            case .temporarilyUnavailable:
+                self.containerStatus = "Error: iCloud temporarily unavailable"
             @unknown default:
                 self.containerStatus = "Error: Unknown iCloud status"
             }
@@ -91,7 +93,8 @@ class CloudKitManager: ObservableObject {
         let query = CKQuery(recordType: "User", predicate: predicate)
         
         do {
-            let records = try await database.perform(query, inZoneWith: nil)
+            let result = try await database.records(matching: query)
+            let records = result.matchResults.compactMap { try? $0.1.get() }
             
             let user: User
             if let existingRecord = records.first {
@@ -101,7 +104,7 @@ class CloudKitManager: ObservableObject {
                 let newUserRecord = CKRecord(recordType: "User")
                 let userID = UUID().uuidString
                 newUserRecord["name"] = name
-                newUserRecord["id"] = userID  // Store the id field
+                newUserRecord["id"] = userID
                 
                 let savedRecord = try await database.save(newUserRecord)
                 user = User(record: savedRecord)
@@ -143,7 +146,14 @@ class CloudKitManager: ObservableObject {
     }
     
     func updateMatch(_ match: Match) async throws {
-        let record = CKRecord(recordType: "Match", recordID: match.recordID)
+        print("[CloudKit] Updating match with ID: \(match.id)")
+        print("[CloudKit] Player2ID being set to: \(match.player2ID ?? "nil")")
+        
+        // Fetch the existing record first
+        let record = try await database.record(for: match.recordID)
+        print("[CloudKit] Found existing record: \(record.recordID.recordName)")
+        
+        // Update the record with new values
         record["player1ID"] = match.player1ID
         record["player2ID"] = match.player2ID
         record["currentRound"] = match.currentRound
@@ -158,14 +168,17 @@ class CloudKitManager: ObservableObject {
         record["isPlayer1Turn"] = match.isPlayer1Turn
         record["isCompleted"] = match.isCompleted
         
-        _ = try await database.save(record)
+        print("[CloudKit] Saving updated record...")
+        let savedRecord = try await database.save(record)
+        print("[CloudKit] Record saved successfully. Player2ID in saved record: \(savedRecord["player2ID"] ?? "nil")")
     }
     
     func fetchOpenMatches() async throws -> [Match] {
         let predicate = NSPredicate(format: "isCompleted == NO")
         let query = CKQuery(recordType: "Match", predicate: predicate)
         
-        let records = try await database.perform(query, inZoneWith: nil)
+        let result = try await database.records(matching: query)
+        let records = result.matchResults.compactMap { try? $0.1.get() }
         return records.map { Match(record: $0) }
     }
     
@@ -196,7 +209,9 @@ class CloudKitManager: ObservableObject {
         do {
             let predicate = NSPredicate(format: "id == %@", userID)
             let query = CKQuery(recordType: "User", predicate: predicate)
-            let records = try await database.perform(query, inZoneWith: nil)
+            
+            let result = try await database.records(matching: query)
+            let records = result.matchResults.compactMap { try? $0.1.get() }
             
             if let record = records.first,
                let name = record["name"] as? String {

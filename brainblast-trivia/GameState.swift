@@ -42,11 +42,20 @@ class GameState: ObservableObject {
     }
     
     func joinMatch(_ match: Match) async throws {
-        guard let currentUser = cloudKit.currentUser else { return }
+        print("[GameState] Attempting to join match with ID: \(match.id)")
+        guard let currentUser = cloudKit.currentUser else {
+            print("[GameState] Error: No current user")
+            return
+        }
+        print("[GameState] Current user ID: \(currentUser.id)")
         
         if match.player1ID == currentUser.id {
+            print("[GameState] Current user is player 1")
             guard let questionID = UUID(uuidString: match.currentQuestionID),
-                  let question = questions.first(where: { $0.id == questionID }) else { return }
+                  let question = questions.first(where: { $0.id == questionID }) else {
+                print("[GameState] Error: Invalid question ID or question not found")
+                return
+            }
             
             self.currentMatch = match
             self.currentQuestion = question
@@ -54,23 +63,33 @@ class GameState: ObservableObject {
             self.player1Score = match.player1Score
             self.player2Score = match.player2Score
             self.isMyTurn = match.isPlayer1Turn
-            return
+            print("[GameState] Successfully joined as player 1")
+        } else if match.player2ID == nil {
+            print("[GameState] Attempting to join as player 2")
+            var updatedMatch = match
+            updatedMatch.player2ID = currentUser.id
+            print("[GameState] Setting player2ID to: \(currentUser.id)")
+            
+            guard let questionID = UUID(uuidString: match.currentQuestionID),
+                  let question = questions.first(where: { $0.id == questionID }) else {
+                print("[GameState] Error: Invalid question ID or question not found")
+                return
+            }
+            
+            print("[GameState] Updating match in CloudKit...")
+            try await cloudKit.updateMatch(updatedMatch)
+            print("[GameState] Match updated successfully")
+            
+            self.currentMatch = updatedMatch
+            self.currentQuestion = question
+            self.currentRound = match.currentRound
+            self.player1Score = match.player1Score
+            self.player2Score = match.player2Score
+            self.isMyTurn = !match.isPlayer1Turn
+            print("[GameState] Successfully joined as player 2")
+        } else {
+            print("[GameState] Cannot join match: already has two players")
         }
-        
-        var updatedMatch = match
-        updatedMatch.player2ID = currentUser.id
-        
-        guard let questionID = UUID(uuidString: match.currentQuestionID),
-              let question = questions.first(where: { $0.id == questionID }) else { return }
-        
-        try await cloudKit.updateMatch(updatedMatch)
-        
-        self.currentMatch = updatedMatch
-        self.currentQuestion = question
-        self.currentRound = match.currentRound
-        self.player1Score = match.player1Score
-        self.player2Score = match.player2Score
-        self.isMyTurn = !match.isPlayer1Turn
     }
     
     private func loadAvailableMatches() async {
