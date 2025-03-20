@@ -263,11 +263,6 @@ struct ContentView: View {
                                         }
                                         .padding()
                                         
-                                        Text("Waiting for another player...")
-                                            .font(.headline)
-                                            .foregroundColor(.gray)
-                                            .padding()
-                                        
                                         Button("Back to Menu") {
                                             gameState.currentMatch = nil
                                         }

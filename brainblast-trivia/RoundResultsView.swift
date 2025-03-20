@@ -89,6 +89,11 @@ struct RoundResultsView: View {
             .cornerRadius(10)
         }
         .padding()
+        .background(Color.black.opacity(0.85))
+        .cornerRadius(20)
+        .shadow(radius: 10)
+        .foregroundColor(.white)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .task {
             // Load player names
             if let match = gameState.currentMatch {
