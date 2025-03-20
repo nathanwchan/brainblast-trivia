@@ -2,6 +2,7 @@ import SwiftUI
 
 struct RoundResultsView: View {
     @ObservedObject var gameState: GameState
+    @EnvironmentObject private var cloudKit: CloudKitManager
     @State private var player1Name = ""
     @State private var player2Name = ""
     
@@ -24,7 +25,7 @@ struct RoundResultsView: View {
                 
                 // Player 1 Answer Section
                 VStack {
-                    Text(player1Name)
+                    Text(gameState.isPlayer1 ? "You" : player1Name)
                         .font(.headline)
                     
                     if let p1 = gameState.player1Answer {
@@ -48,7 +49,7 @@ struct RoundResultsView: View {
                 
                 // Player 2 Answer Section
                 VStack {
-                    Text(player2Name)
+                    Text(!gameState.isPlayer1 ? "You" : player2Name)
                         .font(.headline)
                     
                     if let p2 = gameState.player2Answer {
@@ -72,7 +73,11 @@ struct RoundResultsView: View {
             }
             
             if let winner = gameState.roundWinner {
-                Text("\(winner == 1 ? player1Name : player2Name) wins this round!")
+                Text(
+                    (gameState.isPlayer1 && winner == 1) || (!gameState.isPlayer1 && winner == 2)
+                    ? "You won this round!"
+                    : "\(winner == 1 ? player1Name : player2Name) won this round!"
+                )
                     .font(.title2)
                     .foregroundColor(.green)
                     .padding()

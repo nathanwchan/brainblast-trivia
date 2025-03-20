@@ -20,6 +20,12 @@ struct ContentView: View {
         return String(format: "%02d:%03d", totalSeconds, thousandths)
     }
 
+    var sortedMatches: [Match] {
+        gameState.availableMatches.sorted { m1, m2 in
+            (m1.modificationDate ?? .distantPast) > (m2.modificationDate ?? .distantPast)
+        }
+    }
+
     var body: some View {
         NavigationView {
             if gameState.currentMatch == nil {
@@ -78,7 +84,7 @@ struct ContentView: View {
                     
                     ScrollView {
                         LazyVStack(spacing: 8) {
-                            ForEach(gameState.availableMatches) { match in
+                            ForEach(sortedMatches) { match in
                                 Button(action: {
                                     Task {
                                         do {

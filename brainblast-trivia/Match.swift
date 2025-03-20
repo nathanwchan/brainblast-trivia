@@ -17,7 +17,8 @@ struct Match: Identifiable {
     var isPlayer1Turn: Bool
     var isCompleted: Bool
     let recordID: CKRecord.ID
-    
+    var modificationDate: Date?
+
     init(record: CKRecord) {
         self.id = record.recordID.recordName
         self.player1ID = record["player1ID"] as? String ?? ""
@@ -34,8 +35,9 @@ struct Match: Identifiable {
         self.isPlayer1Turn = record["isPlayer1Turn"] as? Bool ?? true
         self.isCompleted = record["isCompleted"] as? Bool ?? false
         self.recordID = record.recordID
+        self.modificationDate = record.modificationDate
     }
-    
+
     init(player1ID: String, questionID: String) {
         self.id = UUID().uuidString
         self.player1ID = player1ID
@@ -47,5 +49,6 @@ struct Match: Identifiable {
         self.isPlayer1Turn = true
         self.isCompleted = false
         self.recordID = CKRecord.ID(recordName: id)
+        self.modificationDate = nil
     }
 }
