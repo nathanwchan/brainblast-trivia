@@ -12,6 +12,7 @@ struct ContentView: View {
     @State private var showingMatches = false
     @State private var showingAnswerConfirmation = false
     @State private var submittedAnswer: String = ""
+    @State private var readyToStart = false
 
     var formattedTime: String {
         let totalSeconds = Int(elapsedTime)
@@ -170,37 +171,71 @@ struct ContentView: View {
                                 if !showingAnswerConfirmation {
                                     Spacer()
                                     
-                                    Text(formattedTime)
-                                        .font(.system(size: 40, weight: .bold, design: .monospaced))
-                                        .foregroundColor(.red)
-                                        .padding()
-                                        .background(Color.black)
-                                        .cornerRadius(8)
-                                        .padding(.bottom, 20)
-                                    
-                                    Text(question.question)
-                                        .font(.title2)
-                                        .multilineTextAlignment(.center)
-                                        .padding()
-                                    
-                                    VStack(spacing: 15) {
-                                        ForEach(question.options, id: \.self) { option in
+                                    if !readyToStart {
+                                        VStack(spacing: 20) {
+                                            Text("Get Ready!")
+                                                .font(.title)
+                                                .padding()
+                                            
                                             Button(action: {
-                                                submittedAnswer = option
-                                                Task {
-                                                    await submitAnswer(option)
-                                                }
+                                                readyToStart = true
+                                                startTime = Date()
+                                                startTimer()
                                             }) {
-                                                Text(option)
-                                                    .frame(maxWidth: .infinity)
+                                                Text("Start")
+                                                    .font(.title2)
+                                                    .frame(minWidth: 200)
                                                     .padding()
                                                     .background(Color.blue)
                                                     .foregroundColor(.white)
                                                     .cornerRadius(10)
                                             }
+                                            
+                                            Button(action: {
+                                                gameState.currentMatch = nil
+                                            }) {
+                                                Text("Back to Menu")
+                                                    .font(.title2)
+                                                    .frame(minWidth: 200)
+                                                    .padding()
+                                                    .background(Color.red)
+                                                    .foregroundColor(.white)
+                                                    .cornerRadius(10)
+                                            }
                                         }
+                                    } else {
+                                        Text(formattedTime)
+                                            .font(.system(size: 40, weight: .bold, design: .monospaced))
+                                            .foregroundColor(.red)
+                                            .padding()
+                                            .background(Color.black)
+                                            .cornerRadius(8)
+                                            .padding(.bottom, 20)
+                                        
+                                        Text(question.question)
+                                            .font(.title2)
+                                            .multilineTextAlignment(.center)
+                                            .padding()
+                                        
+                                        VStack(spacing: 15) {
+                                            ForEach(question.options, id: \.self) { option in
+                                                Button(action: {
+                                                    submittedAnswer = option
+                                                    Task {
+                                                        await submitAnswer(option)
+                                                    }
+                                                }) {
+                                                    Text(option)
+                                                        .frame(maxWidth: .infinity)
+                                                        .padding()
+                                                        .background(Color.blue)
+                                                        .foregroundColor(.white)
+                                                        .cornerRadius(10)
+                                                }
+                                            }
+                                        }
+                                        .padding()
                                     }
-                                    .padding()
                                     
                                     Spacer()
                                 } else {
@@ -269,8 +304,7 @@ struct ContentView: View {
                 }
                 .onAppear {
                     if gameState.isMyTurn {
-                        startTime = Date()
-                        startTimer()
+                        readyToStart = false
                         showingAnswerConfirmation = false
                     }
                 }
