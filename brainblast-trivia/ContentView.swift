@@ -214,9 +214,6 @@ struct ContentView: View {
                         Text("Player \(winner) wins!")
                     }
                 }
-                .navigationBarItems(trailing: Button("Logout") {
-                    cloudKit.logout()
-                })
             }
         }
     }
