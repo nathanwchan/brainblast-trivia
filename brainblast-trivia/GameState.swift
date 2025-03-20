@@ -49,8 +49,8 @@ class GameState: ObservableObject {
         }
         print("[GameState] Current user ID: \(currentUser.id)")
         
-        if match.player1ID == currentUser.id {
-            print("[GameState] Current user is player 1")
+        if match.player1ID == currentUser.id || match.player2ID == currentUser.id {
+            print("[GameState] Current user is player \(match.player1ID == currentUser.id ? "1" : "2")")
             guard let questionID = UUID(uuidString: match.currentQuestionID),
                   let question = questions.first(where: { $0.id == questionID }) else {
                 print("[GameState] Error: Invalid question ID or question not found")
@@ -62,8 +62,8 @@ class GameState: ObservableObject {
             self.currentRound = match.currentRound
             self.player1Score = match.player1Score
             self.player2Score = match.player2Score
-            self.isMyTurn = match.isPlayer1Turn
-            print("[GameState] Successfully joined as player 1")
+            self.isMyTurn = match.player1ID == currentUser.id ? match.isPlayer1Turn : !match.isPlayer1Turn
+            print("[GameState] Successfully rejoined match")
         } else if match.player2ID == nil {
             print("[GameState] Attempting to join as player 2")
             var updatedMatch = match
@@ -88,7 +88,7 @@ class GameState: ObservableObject {
             self.isMyTurn = !match.isPlayer1Turn
             print("[GameState] Successfully joined as player 2")
         } else {
-            print("[GameState] Cannot join match: already has two players")
+            print("[GameState] Cannot join match: user is neither player 1 nor player 2")
         }
     }
     
