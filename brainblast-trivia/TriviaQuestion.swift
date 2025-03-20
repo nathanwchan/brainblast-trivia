@@ -1,10 +1,23 @@
 import Foundation
+import CloudKit
 
 struct TriviaQuestion: Identifiable {
     let id = UUID()
     let question: String
     let answer: String
     let options: [String]
+    
+    init(record: CKRecord) {
+        self.question = record["question"] as? String ?? ""
+        self.answer = record["answer"] as? String ?? ""
+        self.options = record["options"] as? [String] ?? []
+    }
+    
+    init(question: String, answer: String, options: [String]) {
+        self.question = question
+        self.answer = answer
+        self.options = options
+    }
     
     // Sample questions for testing
     static let sampleQuestions = [
@@ -20,4 +33,3 @@ struct TriviaQuestion: Identifiable {
         )
     ]
 }
-

@@ -1,17 +1,19 @@
-//
-//  brainblast_triviaApp.swift
-//  brainblast-trivia
-//
-//  Created by Nathan Chan on 3/20/25.
-//
-
 import SwiftUI
+import CloudKit
 
 @main
 struct brainblast_triviaApp: App {
+    @StateObject private var cloudKit = CloudKitManager.shared
+    
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            if cloudKit.isAuthenticated {
+                ContentView()
+                    .environmentObject(cloudKit)
+            } else {
+                LoginView()
+                    .environmentObject(cloudKit)
+            }
         }
     }
 }

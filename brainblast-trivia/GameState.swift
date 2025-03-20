@@ -1,4 +1,5 @@
 import Foundation
+import CloudKit
 
 class GameState: ObservableObject {
     @Published var currentRound = 1
@@ -8,14 +9,65 @@ class GameState: ObservableObject {
     @Published var player1Answer: (answer: String, time: TimeInterval)?
     @Published var player2Answer: (answer: String, time: TimeInterval)?
     @Published var isGameOver = false
-    @Published var winner: Int? // 1 for player 1, 2 for player 2
+    @Published var winner: Int? 
+    @Published var currentMatch: Match?
+    @Published var availableMatches: [Match] = []
+    @Published var isMyTurn = false
+    @Published var showRoundResults = false
+    @Published var roundWinner: Int?
     
+    private let cloudKit = CloudKitManager.shared
     var questions: [TriviaQuestion]
     var usedQuestions: Set<UUID> = []
     
+    var isPlayer1: Bool {
+        guard let match = currentMatch else { return false }
+        return match.player1ID == cloudKit.currentUser?.id
+    }
+    
     init() {
         self.questions = TriviaQuestion.sampleQuestions
+        Task {
+            await loadAvailableMatches()
+        }
+    }
+    
+    func startNewGame() async throws {
         selectNewQuestion()
+        guard let question = currentQuestion else { return }
+        let match = try await cloudKit.createMatch(questionID: question.id.uuidString)
+        DispatchQueue.main.async {
+            self.currentMatch = match
+            self.isMyTurn = true
+        }
+    }
+    
+    func joinMatch(_ match: Match) async throws {
+        guard let currentUser = cloudKit.currentUser else { return }
+        var updatedMatch = match
+        updatedMatch.player2ID = currentUser.id
+        
+        guard let questionID = UUID(uuidString: match.currentQuestionID),
+              let question = questions.first(where: { $0.id == questionID }) else { return }
+        
+        try await cloudKit.updateMatch(updatedMatch)
+        
+        DispatchQueue.main.async {
+            self.currentMatch = updatedMatch
+            self.currentQuestion = question
+            self.isMyTurn = false
+        }
+    }
+    
+    private func loadAvailableMatches() async {
+        do {
+            let matches = try await cloudKit.fetchOpenMatches()
+            DispatchQueue.main.async {
+                self.availableMatches = matches
+            }
+        } catch {
+            print("Error loading matches: \(error)")
+        }
     }
     
     func selectNewQuestion() {
@@ -26,53 +78,68 @@ class GameState: ObservableObject {
         }
     }
     
-    func submitAnswer(player: Int, answer: String, time: TimeInterval) {
-        if player == 1 {
-            player1Answer = (answer, time)
-        } else {
-            player2Answer = (answer, time)
-        }
-        
-        if player1Answer != nil && player2Answer != nil {
-            evaluateRound()
-        }
-    }
-    
-    private func evaluateRound() {
-        guard let p1Answer = player1Answer,
-              let p2Answer = player2Answer,
+    func submitAnswer(answer: String, time: TimeInterval) async throws {
+        guard var match = currentMatch,
               let question = currentQuestion else { return }
         
-        let p1Correct = p1Answer.answer == question.answer
-        let p2Correct = p2Answer.answer == question.answer
-        
-        if p1Correct && p2Correct {
-            // Both correct, faster player wins
-            if p1Answer.time < p2Answer.time {
-                player1Score += 1
-            } else if p2Answer.time < p1Answer.time {
-                player2Score += 1
+        if isPlayer1 {
+            player1Answer = (answer, time)
+            match.player1Answer = answer
+            match.player1Time = time
+            match.isPlayer1Turn = false
+        } else {
+            player2Answer = (answer, time)
+            match.player2Answer = answer
+            match.player2Time = time
+            match.isPlayer1Turn = true
+            
+            let p1Correct = match.player1Answer == question.answer
+            let p2Correct = answer == question.answer
+            
+            if p1Correct && p2Correct {
+                if match.player1Time! < time {
+                    match.player1Score += 1
+                    roundWinner = 1
+                } else {
+                    match.player2Score += 1
+                    roundWinner = 2
+                }
+            } else if p1Correct {
+                match.player1Score += 1
+                roundWinner = 1
+            } else if p2Correct {
+                match.player2Score += 1
+                roundWinner = 2
             }
-        } else if p1Correct {
-            player1Score += 1
-        } else if p2Correct {
-            player2Score += 1
+            
+            player1Score = match.player1Score
+            player2Score = match.player2Score
+            
+            if match.player1Score >= 3 || match.player2Score >= 3 {
+                match.isCompleted = true
+                winner = match.player1Score >= 3 ? 1 : 2
+                isGameOver = true
+            } else {
+                match.currentRound += 1
+                currentRound = match.currentRound
+                selectNewQuestion()
+                match.currentQuestionID = currentQuestion?.id.uuidString ?? ""
+                match.previousQuestions.append(match.currentQuestionID)
+                
+                player1Answer = nil
+                player2Answer = nil
+                roundWinner = nil
+            }
         }
         
-        // Check for game over
-        if player1Score >= 3 {
-            isGameOver = true
-            winner = 1
-        } else if player2Score >= 3 {
-            isGameOver = true
-            winner = 2
-        } else {
-            // Reset for next round
-            currentRound += 1
-            player1Answer = nil
-            player2Answer = nil
-            selectNewQuestion()
+        try await cloudKit.updateMatch(match)
+        
+        DispatchQueue.main.async {
+            self.currentMatch = match
+            self.isMyTurn = self.isPlayer1 ? !match.isPlayer1Turn : match.isPlayer1Turn
+            if !self.isPlayer1 {
+                self.showRoundResults = true
+            }
         }
     }
 }
-
