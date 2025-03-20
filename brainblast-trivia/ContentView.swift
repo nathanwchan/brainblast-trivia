@@ -325,6 +325,8 @@ struct RoundResultsView: View {
 struct MatchListView: View {
     @ObservedObject var gameState: GameState
     @Environment(\.presentationMode) var presentationMode
+    @EnvironmentObject private var cloudKit: CloudKitManager
+    @State private var userNames: [String: String] = [:]
 
     var body: some View {
         List(gameState.availableMatches) { match in
@@ -338,10 +340,33 @@ struct MatchListView: View {
                     }
                 }
             }) {
-                Text("Match #\(match.id.prefix(8))")
+                HStack {
+                    if match.player1ID == cloudKit.currentUser?.id {
+                        Text("Your game")
+                            .foregroundColor(.blue)
+                    } else {
+                        Text(userNames[match.player1ID] ?? "Loading...")
+                            .foregroundColor(.green)
+                    }
+                    Spacer()
+                    Text("Round \(match.currentRound)")
+                        .foregroundColor(.gray)
+                }
             }
         }
         .navigationTitle("Available Matches")
+        .task {
+            // Load all user names when the view appears
+            for match in gameState.availableMatches {
+                if userNames[match.player1ID] == nil {
+                    if let name = await cloudKit.getUserName(for: match.player1ID) {
+                        DispatchQueue.main.async {
+                            userNames[match.player1ID] = name
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 

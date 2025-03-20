@@ -13,6 +13,9 @@ class CloudKitManager: ObservableObject {
     @Published var isAuthenticated = false
     @Published var containerStatus: String = "Unknown"
     
+    // Add cache for user names
+    private var userNameCache: [String: String] = [:]
+    
     private init() {
         self.container = CKContainer(identifier: "iCloud.com.natechan.brainblast-2")
         self.database = container.publicCloudDatabase
@@ -56,6 +59,7 @@ class CloudKitManager: ObservableObject {
         // Create test records to ensure schema exists
         let testUser = CKRecord(recordType: "User")
         testUser["name"] = "test"
+        testUser["id"] = "test-id"  // Add id field to schema
         
         let testMatch = CKRecord(recordType: "Match")
         testMatch["player1ID"] = "test"
@@ -95,7 +99,9 @@ class CloudKitManager: ObservableObject {
             } else {
                 // Create new user record
                 let newUserRecord = CKRecord(recordType: "User")
+                let userID = UUID().uuidString
                 newUserRecord["name"] = name
+                newUserRecord["id"] = userID  // Store the id field
                 
                 let savedRecord = try await database.save(newUserRecord)
                 user = User(record: savedRecord)
@@ -169,5 +175,31 @@ class CloudKitManager: ObservableObject {
             self.isAuthenticated = false
             UserDefaults.standard.removeObject(forKey: "currentUser")
         }
+    }
+    
+    func getUserName(for userID: String) async -> String? {
+        // Return from cache if available
+        if let cachedName = userNameCache[userID] {
+            return cachedName
+        }
+        
+        // Otherwise fetch from CloudKit
+        do {
+            let predicate = NSPredicate(format: "id == %@", userID)
+            let query = CKQuery(recordType: "User", predicate: predicate)
+            let records = try await database.perform(query, inZoneWith: nil)
+            
+            if let record = records.first,
+               let name = record["name"] as? String {
+                DispatchQueue.main.async {
+                    self.userNameCache[userID] = name
+                }
+                return name
+            }
+        } catch {
+            print("Error fetching user name: \(error)")
+        }
+        
+        return nil
     }
 }

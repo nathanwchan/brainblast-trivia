@@ -7,8 +7,9 @@ struct User: Identifiable, Codable {
     var name: String
     let recordID: CKRecord.ID
     
+    // Update User init from CKRecord
     init(record: CKRecord) {
-        self.id = record.recordID.recordName
+        self.id = record["id"] as? String ?? record.recordID.recordName
         self.name = record["name"] as? String ?? ""
         self.recordID = record.recordID
     }

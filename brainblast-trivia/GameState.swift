@@ -9,7 +9,7 @@ class GameState: ObservableObject {
     @Published var player1Answer: (answer: String, time: TimeInterval)?
     @Published var player2Answer: (answer: String, time: TimeInterval)?
     @Published var isGameOver = false
-    @Published var winner: Int? 
+    @Published var winner: Int?
     @Published var currentMatch: Match?
     @Published var availableMatches: [Match] = []
     @Published var isMyTurn = false
@@ -44,6 +44,22 @@ class GameState: ObservableObject {
     
     func joinMatch(_ match: Match) async throws {
         guard let currentUser = cloudKit.currentUser else { return }
+        
+        if match.player1ID == currentUser.id {
+            guard let questionID = UUID(uuidString: match.currentQuestionID),
+                  let question = questions.first(where: { $0.id == questionID }) else { return }
+            
+            DispatchQueue.main.async {
+                self.currentMatch = match
+                self.currentQuestion = question
+                self.currentRound = match.currentRound
+                self.player1Score = match.player1Score
+                self.player2Score = match.player2Score
+                self.isMyTurn = match.isPlayer1Turn
+            }
+            return
+        }
+        
         var updatedMatch = match
         updatedMatch.player2ID = currentUser.id
         
@@ -55,7 +71,10 @@ class GameState: ObservableObject {
         DispatchQueue.main.async {
             self.currentMatch = updatedMatch
             self.currentQuestion = question
-            self.isMyTurn = false
+            self.currentRound = match.currentRound
+            self.player1Score = match.player1Score
+            self.player2Score = match.player2Score
+            self.isMyTurn = !match.isPlayer1Turn
         }
     }
     
