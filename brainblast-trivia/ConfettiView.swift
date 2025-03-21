@@ -1,10 +1,3 @@
-//
-//  ExampleView.swift
-//  SomeProject
-//
-//  Created by You on 3/20/25.
-//
-
 import SwiftUI
 
 struct RainbowParticle: Identifiable {
