@@ -318,8 +318,6 @@ struct ContentView: View {
                                         Text(submittedAnswer == question.answer ? "Correct!" : "Incorrect")
                                             .font(.title)
                                             .foregroundColor(submittedAnswer == question.answer ? .green : .red)
-                                            .padding()
-                                        
                                         Text(String(format: "Your time: %.3f seconds", elapsedTime))
                                             .font(.title2)
                                             .foregroundColor(.blue)
@@ -374,6 +372,13 @@ struct ContentView: View {
                     if gameState.showRoundResults {
                         RoundResultsView(gameState: gameState)
                             .transition(.scale)
+                    }
+                    
+                    if gameState.showingAnswerConfirmation && submittedAnswer == gameState.currentQuestion?.answer {
+                        ConfettiView()
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .allowsHitTesting(false)
+                            .ignoresSafeArea()
                     }
                 }
                 .onAppear {
