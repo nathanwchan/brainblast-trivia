@@ -36,7 +36,8 @@ struct ContentView: View {
     @State private var derdOffset: CGFloat = UIScreen.main.bounds.height
     @State private var isDerdVisible = false
     @State private var hasShownInitialAnimation = false
-    
+    @State private var derdTimer: Timer? = nil
+
     var formattedTime: String {
         let totalSeconds = Int(elapsedTime)
         let thousandths = Int((elapsedTime * 1000).truncatingRemainder(dividingBy: 1000))
@@ -172,6 +173,8 @@ struct ContentView: View {
                         print("Error loading matches: \(error)")
                     }
                     
+                    derdTimer?.invalidate()
+                    
                     DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
                         withAnimation(.spring(response: 0.6, dampingFraction: 0.6)) {
                             isDerdVisible = true
@@ -184,7 +187,7 @@ struct ContentView: View {
                                 derdOffset = UIScreen.main.bounds.height
                                 hasShownInitialAnimation = true
                                 
-                                Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) { _ in
+                                derdTimer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) { _ in
                                     withAnimation(.spring(response: 0.6, dampingFraction: 0.6)) {
                                         isDerdVisible.toggle()
                                         derdOffset = isDerdVisible ? 250 : UIScreen.main.bounds.height
@@ -200,6 +203,10 @@ struct ContentView: View {
                             }
                         }
                     }
+                }
+                .onDisappear {
+                    derdTimer?.invalidate()
+                    derdTimer = nil
                 }
             } else {
                 ZStack {
