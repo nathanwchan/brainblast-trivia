@@ -48,7 +48,7 @@ struct RoundResultsView: View {
                 .padding()
                 .background(
                     RoundedRectangle(cornerRadius: 10)
-                        .fill(Color.blue.opacity(0.1))
+                        .fill(Color.rainbowGradient.opacity(0.1))
                         .overlay(
                             RoundedRectangle(cornerRadius: 10)
                                 .strokeBorder(gameState.roundWinner == 1 ? Color.green : Color.clear, lineWidth: 3)
@@ -73,7 +73,7 @@ struct RoundResultsView: View {
                 .padding()
                 .background(
                     RoundedRectangle(cornerRadius: 10)
-                        .fill(Color.green.opacity(0.1))
+                        .fill(Color.rainbowGradient.opacity(0.1))
                         .overlay(
                             RoundedRectangle(cornerRadius: 10)
                                 .strokeBorder(gameState.roundWinner == 2 ? Color.green : Color.clear, lineWidth: 3)
@@ -107,7 +107,7 @@ struct RoundResultsView: View {
                     }
                 }
                 .padding()
-                .background(Color.blue)
+                .background(Color.rainbowGradient)
                 .foregroundColor(.white)
                 .cornerRadius(10)
             }

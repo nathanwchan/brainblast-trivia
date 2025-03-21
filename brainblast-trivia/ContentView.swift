@@ -1,6 +1,27 @@
 import SwiftUI
 import Combine
 
+extension Color {
+    static let rainbowGradient = LinearGradient(
+        gradient: Gradient(colors: [.red, .orange, .yellow, .green, .blue, .purple]),
+        startPoint: .leading,
+        endPoint: .trailing
+    )
+    
+    static let subtleRainbowGradient = LinearGradient(
+        gradient: Gradient(colors: [
+            .red.opacity(0.8),
+            .orange.opacity(0.8),
+            .yellow.opacity(0.8),
+            .green.opacity(0.8),
+            .blue.opacity(0.8),
+            .purple.opacity(0.8)
+        ]),
+        startPoint: .leading,
+        endPoint: .trailing
+    )
+}
+
 struct ContentView: View {
     @StateObject private var gameState = GameState()
     @EnvironmentObject private var cloudKit: CloudKitManager
@@ -42,7 +63,13 @@ struct ContentView: View {
                     }
                     .padding()
                     
-                    Spacer()
+                    Image("logo")
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: UIScreen.main.bounds.width * 0.8)
+                        .padding(.bottom, 40)
+                    
+                    Spacer().frame(height: 30)
                     
                     Button("Start New Game") {
                         Task {
@@ -51,10 +78,11 @@ struct ContentView: View {
                     }
                     .padding(.horizontal, 40)
                     .padding(.vertical, 15)
-                    .background(Color.blue)
+                    .background(Color.rainbowGradient)
                     .foregroundColor(.white)
-                    .cornerRadius(10)
+                    .clipShape(Capsule())
                     .font(.title2)
+                    .shadow(radius: 5)
                     
                     Spacer()
                     
