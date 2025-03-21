@@ -1,27 +1,6 @@
 import SwiftUI
 import Combine
 
-extension Color {
-    static let rainbowGradient = LinearGradient(
-        gradient: Gradient(colors: [.red, .orange, .yellow, .green, .blue, .purple]),
-        startPoint: .leading,
-        endPoint: .trailing
-    )
-    
-    static let subtleRainbowGradient = LinearGradient(
-        gradient: Gradient(colors: [
-            .red.opacity(0.8),
-            .orange.opacity(0.8),
-            .yellow.opacity(0.8),
-            .green.opacity(0.8),
-            .blue.opacity(0.8),
-            .purple.opacity(0.8)
-        ]),
-        startPoint: .leading,
-        endPoint: .trailing
-    )
-}
-
 struct ContentView: View {
     @StateObject private var gameState = GameState()
     @EnvironmentObject private var cloudKit: CloudKitManager
@@ -37,6 +16,9 @@ struct ContentView: View {
     @State private var isDerdVisible = false
     @State private var hasShownInitialAnimation = false
     @State private var derdTimer: Timer? = nil
+    @State private var animationCount = 0
+    @State private var maxAnimations = 3
+    @State private var isFirstLoad = UserDefaults.standard.bool(forKey: "hasSeenDerdAnimation") == false
 
     var formattedTime: String {
         let totalSeconds = Int(elapsedTime)
@@ -173,30 +155,43 @@ struct ContentView: View {
                         print("Error loading matches: \(error)")
                     }
                     
-                    derdTimer?.invalidate()
-                    
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-                        withAnimation(.spring(response: 0.6, dampingFraction: 0.6)) {
-                            isDerdVisible = true
-                            derdOffset = 250
-                        }
+                    // Only show derd animation if it's first load
+                    if isFirstLoad {
+                        derdTimer?.invalidate()
                         
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
                             withAnimation(.spring(response: 0.6, dampingFraction: 0.6)) {
-                                isDerdVisible = false
-                                derdOffset = UIScreen.main.bounds.height
-                                hasShownInitialAnimation = true
-                                
-                                derdTimer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) { _ in
-                                    withAnimation(.spring(response: 0.6, dampingFraction: 0.6)) {
-                                        isDerdVisible.toggle()
-                                        derdOffset = isDerdVisible ? 250 : UIScreen.main.bounds.height
-                                    }
+                                isDerdVisible = true
+                                derdOffset = 250
+                            }
+                            
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                                withAnimation(.spring(response: 0.6, dampingFraction: 0.6)) {
+                                    isDerdVisible = false
+                                    derdOffset = UIScreen.main.bounds.height
+                                    hasShownInitialAnimation = true
+                                    animationCount += 1
                                     
-                                    DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                                        withAnimation(.spring(response: 0.6, dampingFraction: 0.6)) {
-                                            isDerdVisible = false
-                                            derdOffset = UIScreen.main.bounds.height
+                                    if animationCount < maxAnimations {
+                                        derdTimer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) { timer in
+                                            withAnimation(.spring(response: 0.6, dampingFraction: 0.6)) {
+                                                isDerdVisible.toggle()
+                                                derdOffset = isDerdVisible ? 250 : UIScreen.main.bounds.height
+                                            }
+                                            
+                                            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                                                withAnimation(.spring(response: 0.6, dampingFraction: 0.6)) {
+                                                    isDerdVisible = false
+                                                    derdOffset = UIScreen.main.bounds.height
+                                                }
+                                                animationCount += 1
+                                                if animationCount >= maxAnimations {
+                                                    timer.invalidate()
+                                                    // Set UserDefaults flag after animations complete
+                                                    UserDefaults.standard.set(true, forKey: "hasSeenDerdAnimation")
+                                                    isFirstLoad = false
+                                                }
+                                            }
                                         }
                                     }
                                 }
