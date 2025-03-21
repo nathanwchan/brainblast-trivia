@@ -10,9 +10,7 @@ struct ContentView: View {
     @State private var elapsedTime: TimeInterval = 0
     @State private var timer: AnyCancellable?
     @State private var showingMatches = false
-    @State private var showingAnswerConfirmation = false
     @State private var submittedAnswer: String = ""
-    @State private var readyToStart = false
 
     var formattedTime: String {
         let totalSeconds = Int(elapsedTime)
@@ -174,17 +172,17 @@ struct ContentView: View {
                         
                         if let question = gameState.currentQuestion {
                             if gameState.isMyTurn {
-                                if !showingAnswerConfirmation {
+                                if !gameState.showingAnswerConfirmation {
                                     Spacer()
                                     
-                                    if !readyToStart {
+                                    if !gameState.readyToStart {
                                         VStack(spacing: 20) {
                                             Text("Get Ready!")
                                                 .font(.title)
                                                 .padding()
                                             
                                             Button(action: {
-                                                readyToStart = true
+                                                gameState.readyToStart = true
                                                 startTime = Date()
                                                 startTimer()
                                             }) {
@@ -310,8 +308,8 @@ struct ContentView: View {
                 }
                 .onAppear {
                     if gameState.isMyTurn {
-                        readyToStart = false
-                        showingAnswerConfirmation = false
+                        gameState.readyToStart = false
+                        gameState.showingAnswerConfirmation = false
                     }
                 }
                 .alert("Game Over!", isPresented: $gameState.isGameOver) {
@@ -334,7 +332,7 @@ struct ContentView: View {
         
         await MainActor.run {
             withAnimation {
-                showingAnswerConfirmation = true
+                gameState.showingAnswerConfirmation = true
             }
         }
         

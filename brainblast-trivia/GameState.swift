@@ -17,6 +17,8 @@ class GameState: ObservableObject {
     @Published var showRoundResults = false
     @Published var roundWinner: Int?
     @Published var userNames: [String: String] = [:]
+    @Published var showingAnswerConfirmation = false
+    @Published var readyToStart = false
     
     private let cloudKit = CloudKitManager.shared
     var questions: [TriviaQuestion]
@@ -142,12 +144,15 @@ class GameState: ObservableObject {
             match.player2Answer = answer
             match.player2Time = time
             match.isPlayer1Turn = true
-            
+        }
+        
+        // If both players have answered
+        if (isPlayer1 && match.player2Answer != nil) || (!isPlayer1 && match.player1Answer != nil) {
             let p1Correct = match.player1Answer == question.answer
-            let p2Correct = answer == question.answer
+            let p2Correct = match.player2Answer == question.answer
             
             if p1Correct && p2Correct {
-                if match.player1Time! < time {
+                if match.player1Time! < match.player2Time! {
                     match.player1Score += 1
                     roundWinner = 1
                 } else {
@@ -164,16 +169,17 @@ class GameState: ObservableObject {
             
             player1Score = match.player1Score
             player2Score = match.player2Score
+            showRoundResults = true
+            
+            // The player who just answered will start the next round
+            if !isGameOver {
+                match.isPlayer1Turn = isPlayer1
+            }
         }
         
         try await cloudKit.updateMatch(match)
-        
         self.currentMatch = match
         self.isMyTurn = self.isPlayer1 ? !match.isPlayer1Turn : match.isPlayer1Turn
-
-        if !self.isPlayer1 {
-            self.showRoundResults = true
-        }
     }
     
     func completeRound() async throws {
@@ -187,6 +193,8 @@ class GameState: ObservableObject {
         player1Answer = nil
         player2Answer = nil
         roundWinner = nil
+        showingAnswerConfirmation = false
+        readyToStart = false
         
         if match.player1Score >= 3 || match.player2Score >= 3 {
             match.isCompleted = true
@@ -204,6 +212,9 @@ class GameState: ObservableObject {
         
         try await cloudKit.updateMatch(match)
         self.currentMatch = match
+        // Set isMyTurn based on whether it's our turn to start the next round
+        self.isMyTurn = self.isPlayer1 ? match.isPlayer1Turn : !match.isPlayer1Turn
+        self.showRoundResults = false
     }
     
     func selectNewQuestion() {
