@@ -5,12 +5,20 @@ struct LoginView: View {
     @State private var username = ""
     @State private var isLoading = false
     @State private var errorMessage: String?
+    @FocusState private var isUsernameFocused: Bool
     
     var body: some View {
-        VStack(spacing: 20) {
+        VStack(spacing: 30) {
+            Image("logo")
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(width: UIScreen.main.bounds.width * 0.8)
+                .padding(.top, 50)
+            
             Text("Welcome to BrainBlast Trivia!")
-                .font(.title)
+                .font(.system(size: 28, weight: .bold))
                 .multilineTextAlignment(.center)
+                .foregroundStyle(Color.rainbowGradient)
             
             if let status = cloudKit.containerStatus {
                 Text(status)
@@ -18,30 +26,51 @@ struct LoginView: View {
                     .foregroundColor(.gray)
                     .padding(.bottom)
             } else {
-                TextField("Enter your name", text: $username)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                    .padding()
+                VStack(alignment: .leading, spacing: 8) {
+                    TextField("", text: $username)
+                        .textFieldStyle(.plain)
+                        .padding()
+                        .background(
+                            RoundedRectangle(cornerRadius: 10)
+                                .stroke(Color.rainbowGradient, lineWidth: 2)
+                        )
+                        .overlay(alignment: .leading) {
+                            Text(username.isEmpty ? "Enter your name" : "")
+                                .foregroundColor(.gray)
+                                .padding(.leading)
+                        }
+                        .focused($isUsernameFocused)
+                }
                 
                 if isLoading {
                     ProgressView()
+                        .frame(maxWidth: .infinity)
                 } else {
                     Button("Continue") {
                         login()
                     }
                     .disabled(username.isEmpty)
                     .padding()
+                    .frame(maxWidth: .infinity)
                     .background(username.isEmpty ? Color.gray : Color.blue)
                     .foregroundColor(.white)
-                    .cornerRadius(10)
+                    .clipShape(Capsule())
+                    .padding(.horizontal)
                 }
             }
             
             if let error = errorMessage {
                 Text(error)
                     .foregroundColor(.red)
+                    .padding()
             }
+            
+            Spacer()
         }
         .padding()
+        .onAppear {
+            isUsernameFocused = true
+        }
     }
     
     private func login() {

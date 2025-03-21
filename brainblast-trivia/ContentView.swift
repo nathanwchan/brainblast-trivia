@@ -63,6 +63,8 @@ struct ContentView: View {
                     }
                     .padding()
                     
+                    Spacer().frame(height: 30)
+                    
                     Image("logo")
                         .resizable()
                         .aspectRatio(contentMode: .fit)
