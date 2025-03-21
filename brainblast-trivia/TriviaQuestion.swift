@@ -66,17 +66,6 @@ struct TriviaQuestion: Identifiable {
             options: ["60°", "72°", "108°", "120°"]
         ),
         TriviaQuestion(
-            id: UUID(uuidString: "1621E1F8-C36C-495A-93FC-0C247A3E6E5F")!,
-            question: "Which sentence contains a split infinitive?",
-            answer: "She decided to quickly run to the store.",
-            options: [
-                "She quickly ran to the store.",
-                "She decided to quickly run to the store.",
-                "She ran to the store quickly.",
-                "Quickly, she ran to the store."
-            ]
-        ),
-        TriviaQuestion(
             id: UUID(uuidString: "2621E1F8-C36C-495A-93FC-0C247A3E6E5F")!,
             question: "What is the value of cos(60°)?",
             answer: "0.5",
@@ -87,17 +76,6 @@ struct TriviaQuestion: Identifiable {
             question: "If f(x) = 2x + 3 and g(x) = x² - 1, what is f(g(2))?",
             answer: "5",
             options: ["3", "5", "7", "9"]
-        ),
-        TriviaQuestion(
-            id: UUID(uuidString: "4621E1F8-C36C-495A-93FC-0C247A3E6E5F")!,
-            question: "Which sentence demonstrates correct subject-verb agreement?",
-            answer: "The team of players practices daily.",
-            options: [
-                "The team of players practice daily.",
-                "The team of players practices daily.",
-                "The team of players are practicing daily.",
-                "The team of players were practicing daily."
-            ]
         ),
         TriviaQuestion(
             id: UUID(uuidString: "5621E1F8-C36C-495A-93FC-0C247A3E6E5F")!,
@@ -116,17 +94,6 @@ struct TriviaQuestion: Identifiable {
             question: "Solve for x: |x - 3| = 7",
             answer: "10 or -4",
             options: ["4 or -4", "10 or -4", "3 or -3", "7 or -7"]
-        ),
-        TriviaQuestion(
-            id: UUID(uuidString: "8621E1F8-C36C-495A-93FC-0C247A3E6E5F")!,
-            question: "Which sentence contains an appositive?",
-            answer: "My brother, an excellent chef, cooked dinner.",
-            options: [
-                "My brother cooked dinner quickly.",
-                "My brother, an excellent chef, cooked dinner.",
-                "My brother cooked dinner for us.",
-                "The dinner my brother cooked was excellent."
-            ]
         ),
         TriviaQuestion(
             id: UUID(uuidString: "9621E1F8-C36C-495A-93FC-0C247A3E6E5F")!,
@@ -165,17 +132,6 @@ struct TriviaQuestion: Identifiable {
             options: ["9", "18", "27", "36"]
         ),
         TriviaQuestion(
-            id: UUID(uuidString: "FF21E1F8-C36C-495A-93FC-0C247A3E6E5F")!,
-            question: "Which sentence contains a misplaced modifier?",
-            answer: "Barking loudly, the girl walked the dog.",
-            options: [
-                "The dog barked loudly while walking.",
-                "Barking loudly, the girl walked the dog.",
-                "The girl walked the barking dog.",
-                "The dog was barking loudly during the walk."
-            ]
-        ),
-        TriviaQuestion(
             id: UUID(uuidString: "AA11E1F8-C36C-495A-93FC-0C247A3E6E5F")!,
             question: "What is the slope of a line perpendicular to y = 2x + 1?",
             answer: "-1/2",
@@ -192,17 +148,6 @@ struct TriviaQuestion: Identifiable {
             question: "What is the value of 3⁴?",
             answer: "81",
             options: ["27", "64", "81", "243"]
-        ),
-        TriviaQuestion(
-            id: UUID(uuidString: "DD11E1F8-C36C-495A-93FC-0C247A3E6E5F")!,
-            question: "Which sentence is in the passive voice?",
-            answer: "The book was written by the author.",
-            options: [
-                "The author wrote the book.",
-                "The book was written by the author.",
-                "The author is writing the book.",
-                "The author writes books."
-            ]
         ),
         TriviaQuestion(
             id: UUID(uuidString: "EE11E1F8-C36C-495A-93FC-0C247A3E6E5F")!,
@@ -245,17 +190,6 @@ struct TriviaQuestion: Identifiable {
             question: "What is the value of π rounded to two decimal places?",
             answer: "3.14",
             options: ["3.14", "3.15", "3.16", "3.13"]
-        ),
-        TriviaQuestion(
-            id: UUID(uuidString: "FF22E1F8-C36C-495A-93FC-0C247A3E6E5F")!,
-            question: "Which sentence contains a compound subject?",
-            answer: "John and Mary went to the store.",
-            options: [
-                "John went to the store.",
-                "John and Mary went to the store.",
-                "John went to the store and bought milk.",
-                "Mary likes going to the store."
-            ]
         ),
         TriviaQuestion(
             id: UUID(uuidString: "AA33E1F8-C36C-495A-93FC-0C247A3E6E5F")!,
@@ -317,49 +251,16 @@ struct TriviaQuestion: Identifiable {
             options: ["5π", "10π", "20π", "25π"]
         ),
         TriviaQuestion(
-            id: UUID(uuidString: "DD44E1F8-C36C-495A-93FC-0C247A3E6E5F")!,
-            question: "Which sentence demonstrates parallel structure?",
-            answer: "She likes hiking, swimming, and camping.",
-            options: [
-                "She likes hiking, to swim, and camps.",
-                "She likes hiking, swimming, and camping.",
-                "She likes to hike, swims, and camping.",
-                "She likes to hike, swimming, and to camp."
-            ]
-        ),
-        TriviaQuestion(
             id: UUID(uuidString: "EE44E1F8-C36C-495A-93FC-0C247A3E6E5F")!,
             question: "What is the sum of the angles in a pentagon?",
             answer: "540°",
             options: ["360°", "450°", "540°", "720°"]
         ),
         TriviaQuestion(
-            id: UUID(uuidString: "FF44E1F8-C36C-495A-93FC-0C247A3E6E5F")!,
-            question: "Which is the correct order of operations?",
-            answer: "Parentheses, Exponents, Multiplication/Division, Addition/Subtraction",
-            options: [
-                "Addition, Subtraction, Multiplication, Division",
-                "Parentheses, Exponents, Multiplication/Division, Addition/Subtraction",
-                "Exponents, Parentheses, Addition/Subtraction, Multiplication/Division",
-                "Multiplication/Division, Addition/Subtraction, Parentheses, Exponents"
-            ]
-        ),
-        TriviaQuestion(
             id: UUID(uuidString: "AA55E1F8-C36C-495A-93FC-0C247A3E6E5F")!,
             question: "What is the median of the numbers 1, 3, 3, 6, 7, 8, 9?",
             answer: "6",
             options: ["3", "5", "6", "7"]
-        ),
-        TriviaQuestion(
-            id: UUID(uuidString: "BB55E1F8-C36C-495A-93FC-0C247A3E6E5F")!,
-            question: "Which sentence contains a dependent clause?",
-            answer: "Although it was raining, we went for a walk.",
-            options: [
-                "We went for a walk.",
-                "Although it was raining, we went for a walk.",
-                "The rain was heavy.",
-                "We enjoyed our walk."
-            ]
         ),
         TriviaQuestion(
             id: UUID(uuidString: "CC55E1F8-C36C-495A-93FC-0C247A3E6E5F")!,
@@ -390,17 +291,6 @@ struct TriviaQuestion: Identifiable {
             question: "What is the sum of the interior angles of a hexagon?",
             answer: "720°",
             options: ["540°", "630°", "720°", "810°"]
-        ),
-        TriviaQuestion(
-            id: UUID(uuidString: "BB66E1F8-C36C-495A-93FC-0C247A3E6E5F")!,
-            question: "Which sentence uses the correct form of 'lie' or 'lay'?",
-            answer: "I will lie down for a nap.",
-            options: [
-                "I will lay down for a nap.",
-                "I will lie down for a nap.",
-                "I laid myself down.",
-                "The book is laying on the table."
-            ]
         )
     ]
 }
