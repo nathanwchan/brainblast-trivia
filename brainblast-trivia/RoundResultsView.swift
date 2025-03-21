@@ -107,7 +107,7 @@ struct RoundResultsView: View {
                     }
                 }
                 .padding()
-                .background(Color.rainbowGradient)
+                .background(Color.blue)
                 .foregroundColor(.white)
                 .cornerRadius(10)
             }
