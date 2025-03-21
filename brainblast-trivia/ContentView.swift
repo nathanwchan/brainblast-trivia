@@ -33,7 +33,10 @@ struct ContentView: View {
     @State private var showingMatches = false
     @State private var submittedAnswer: String = ""
     @State private var opponentName: String = ""
-
+    @State private var derdOffset: CGFloat = UIScreen.main.bounds.height
+    @State private var isDerdVisible = false
+    @State private var hasShownInitialAnimation = false
+    
     var formattedTime: String {
         let totalSeconds = Int(elapsedTime)
         let thousandths = Int((elapsedTime * 1000).truncatingRemainder(dividingBy: 1000))
@@ -49,108 +52,116 @@ struct ContentView: View {
     var body: some View {
         NavigationView {
             if gameState.currentMatch == nil {
-                VStack {
-                    HStack {
-                        Text(cloudKit.currentUser?.name ?? "")
-                            .font(.title)
-                        
-                        Spacer()
-                        
-                        Button("Logout") {
-                            cloudKit.logout()
-                        }
-                        .foregroundColor(.red)
-                    }
-                    .padding()
-                    
-                    Spacer().frame(height: 30)
-                    
-                    Image("logo")
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .frame(width: UIScreen.main.bounds.width * 0.8)
-                        .padding(.bottom, 40)
-                    
-                    Spacer().frame(height: 30)
-                    
-                    Button("Start New Game") {
-                        Task {
-                            try? await gameState.startNewGame()
-                        }
-                    }
-                    .padding(.horizontal, 40)
-                    .padding(.vertical, 15)
-                    .background(Color.rainbowGradient)
-                    .foregroundColor(.white)
-                    .clipShape(Capsule())
-                    .font(.title2)
-                    .shadow(radius: 5)
-                    
-                    Spacer()
-                    
-                    HStack {
-                        Text("Available Matches")
-                            .font(.headline)
-                        
-                        Spacer()
-                        
-                        Button(action: {
-                            Task {
-                                do {
-                                    let matches = try await cloudKit.fetchOpenMatches()
-                                    gameState.availableMatches = matches
-                                    await gameState.fetchUserNames(for: matches)
-                                } catch {
-                                    print("Error loading matches: \(error)")
-                                }
+                ZStack {
+                    VStack {
+                        HStack {
+                            Text(cloudKit.currentUser?.name ?? "")
+                                .font(.title)
+                            
+                            Spacer()
+                            
+                            Button("Logout") {
+                                cloudKit.logout()
                             }
-                        }) {
-                            Image(systemName: "arrow.clockwise")
-                                .foregroundColor(.blue)
+                            .foregroundColor(.red)
                         }
-                    }
-                    .padding(.horizontal)
-                    
-                    ScrollView {
-                        LazyVStack(spacing: 8) {
-                            ForEach(sortedMatches) { match in
-                                Button(action: {
-                                    Task {
-                                        do {
-                                            try await gameState.joinMatch(match)
-                                        } catch {
-                                            print("Error joining match: \(error)")
-                                        }
+                        .padding()
+                        
+                        Spacer().frame(height: 30)
+                        
+                        Image("logo")
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: UIScreen.main.bounds.width * 0.8)
+                            .padding(.bottom, 40)
+                        
+                        Spacer().frame(height: 30)
+                        
+                        Button("Start New Game") {
+                            Task {
+                                try? await gameState.startNewGame()
+                            }
+                        }
+                        .padding(.horizontal, 40)
+                        .padding(.vertical, 15)
+                        .background(Color.rainbowGradient)
+                        .foregroundColor(.white)
+                        .clipShape(Capsule())
+                        .font(.title2)
+                        .shadow(radius: 5)
+                        
+                        Spacer()
+                        
+                        HStack {
+                            Text("Available Matches")
+                                .font(.headline)
+                            
+                            Spacer()
+                            
+                            Button(action: {
+                                Task {
+                                    do {
+                                        let matches = try await cloudKit.fetchOpenMatches()
+                                        gameState.availableMatches = matches
+                                        await gameState.fetchUserNames(for: matches)
+                                    } catch {
+                                        print("Error loading matches: \(error)")
                                     }
-                                }) {
-                                    HStack {
-                                        if match.player1ID == cloudKit.currentUser?.id && match.player2ID == nil {
-                                            Text("Waiting on an opponent...")
-                                                .foregroundColor(.red)
-                                        } else if match.player1ID == cloudKit.currentUser?.id {
-                                            Text("You x \(gameState.userNames[match.player2ID!] ?? "someone") —\u{00A0}It's \(match.isPlayer1Turn ? "your turn!" : "their turn...")")
-                                                .foregroundColor(match.isPlayer1Turn ? .green : .blue)
-                                        } else if match.player2ID == cloudKit.currentUser?.id {
-                                            Text("You x \(gameState.userNames[match.player1ID] ?? "someone") —\u{00A0}It's \(!match.isPlayer1Turn ? "your turn!" : "their turn...")")
-                                                .foregroundColor(!match.isPlayer1Turn ? .green : .blue)
-                                        } else {
-                                            Text("Available to join \(gameState.userNames[match.player1ID] ?? "someone")'s match")
-                                                .foregroundColor(.green)
-                                        }
-                                        Spacer()
-                                        Text("Round \(match.currentRound)")
-                                            .foregroundColor(.gray)
-                                    }
-                                    .padding(.horizontal)
-                                    .padding(.vertical, 8)
-                                    .background(Color.secondary.opacity(0.1))
-                                    .cornerRadius(8)
                                 }
+                            }) {
+                                Image(systemName: "arrow.clockwise")
+                                    .foregroundColor(.blue)
                             }
                         }
                         .padding(.horizontal)
+                        
+                        ScrollView {
+                            LazyVStack(spacing: 8) {
+                                ForEach(sortedMatches) { match in
+                                    Button(action: {
+                                        Task {
+                                            do {
+                                                try await gameState.joinMatch(match)
+                                            } catch {
+                                                print("Error joining match: \(error)")
+                                            }
+                                        }
+                                    }) {
+                                        HStack {
+                                            if match.player1ID == cloudKit.currentUser?.id && match.player2ID == nil {
+                                                Text("Waiting on an opponent...")
+                                                    .foregroundColor(.red)
+                                            } else if match.player1ID == cloudKit.currentUser?.id {
+                                                Text("You x \(gameState.userNames[match.player2ID!] ?? "someone") —\u{00A0}It's \(match.isPlayer1Turn ? "your turn!" : "their turn...")")
+                                                    .foregroundColor(match.isPlayer1Turn ? .green : .blue)
+                                            } else if match.player2ID == cloudKit.currentUser?.id {
+                                                Text("You x \(gameState.userNames[match.player1ID] ?? "someone") —\u{00A0}It's \(!match.isPlayer1Turn ? "your turn!" : "their turn...")")
+                                                    .foregroundColor(!match.isPlayer1Turn ? .green : .blue)
+                                            } else {
+                                                Text("Available to join \(gameState.userNames[match.player1ID] ?? "someone")'s match")
+                                                    .foregroundColor(.green)
+                                            }
+                                            Spacer()
+                                            Text("Round \(match.currentRound)")
+                                                .foregroundColor(.gray)
+                                        }
+                                        .padding(.horizontal)
+                                        .padding(.vertical, 8)
+                                        .background(Color.secondary.opacity(0.1))
+                                        .cornerRadius(8)
+                                    }
+                                }
+                            }
+                            .padding(.horizontal)
+                        }
+                        .frame(height: UIScreen.main.bounds.height / 3)
                     }
-                    .frame(height: UIScreen.main.bounds.height / 3)
+                    
+                    Image("derd")
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 150)
+                        .offset(y: derdOffset)
                 }
                 .task {
                     do {
@@ -159,6 +170,35 @@ struct ContentView: View {
                         await gameState.fetchUserNames(for: matches)
                     } catch {
                         print("Error loading matches: \(error)")
+                    }
+                    
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+                        withAnimation(.spring(response: 0.6, dampingFraction: 0.6)) {
+                            isDerdVisible = true
+                            derdOffset = 250
+                        }
+                        
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                            withAnimation(.spring(response: 0.6, dampingFraction: 0.6)) {
+                                isDerdVisible = false
+                                derdOffset = UIScreen.main.bounds.height
+                                hasShownInitialAnimation = true
+                                
+                                Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) { _ in
+                                    withAnimation(.spring(response: 0.6, dampingFraction: 0.6)) {
+                                        isDerdVisible.toggle()
+                                        derdOffset = isDerdVisible ? 250 : UIScreen.main.bounds.height
+                                    }
+                                    
+                                    DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                                        withAnimation(.spring(response: 0.6, dampingFraction: 0.6)) {
+                                            isDerdVisible = false
+                                            derdOffset = UIScreen.main.bounds.height
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             } else {
