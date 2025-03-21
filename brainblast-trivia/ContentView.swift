@@ -11,6 +11,7 @@ struct ContentView: View {
     @State private var timer: AnyCancellable?
     @State private var showingMatches = false
     @State private var submittedAnswer: String = ""
+    @State private var opponentName: String = ""
 
     var formattedTime: String {
         let totalSeconds = Int(elapsedTime)
@@ -135,7 +136,7 @@ struct ContentView: View {
                     VStack {
                         HStack {
                             VStack(alignment: .leading) {
-                                Text(gameState.isPlayer1 ? "You" : "Opponent")
+                                Text(gameState.isPlayer1 ? "You" : opponentName)
                                     .font(.headline)
                                 Text("Score: \(gameState.player1Score)")
                             }
@@ -160,7 +161,7 @@ struct ContentView: View {
                             Spacer()
                             
                             VStack(alignment: .trailing) {
-                                Text(!gameState.isPlayer1 ? "You" : (gameState.currentMatch?.player2ID != nil ? "Opponent" : "TBD"))
+                                Text(!gameState.isPlayer1 ? "You" : (gameState.currentMatch?.player2ID != nil ? opponentName : "TBD"))
                                     .font(.headline)
                                 Text("Score: \(gameState.player2Score)")
                             }
@@ -284,7 +285,7 @@ struct ContentView: View {
                                 }
                             } else {
                                 Spacer()
-                                Text("Waiting for an opponent...")
+                                Text("It's \(opponentName)'s turn")
                                     .font(.title2)
                                 
                                 Button("Back to Menu") {
@@ -310,6 +311,17 @@ struct ContentView: View {
                     if gameState.isMyTurn {
                         gameState.readyToStart = false
                         gameState.showingAnswerConfirmation = false
+                    }
+                }
+                .task {
+                    if let match = gameState.currentMatch {
+                        if gameState.isPlayer1 {
+                            if let player2ID = match.player2ID {
+                                opponentName = await CloudKitManager.shared.getUserName(for: player2ID) ?? "Player 2"
+                            }
+                        } else {
+                            opponentName = await CloudKitManager.shared.getUserName(for: match.player1ID) ?? "Player 1"
+                        }
                     }
                 }
                 .alert("Game Over!", isPresented: $gameState.isGameOver) {
