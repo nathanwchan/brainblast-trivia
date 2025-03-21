@@ -285,7 +285,7 @@ struct ContentView: View {
                                 }
                             } else {
                                 Spacer()
-                                Text("It's \(opponentName)'s turn")
+                                Text(opponentName.isEmpty ? "Waiting for an opponent..." : "It's \(opponentName)'s turn")
                                     .font(.title2)
                                 
                                 Button("Back to Menu") {
