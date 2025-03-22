@@ -26,9 +26,19 @@ struct ContentView: View {
     }
 
     var sortedMatches: [Match] {
-        gameState.availableMatches.sorted { m1, m2 in
-            (m1.modificationDate ?? .distantPast) > (m2.modificationDate ?? .distantPast)
-        }
+        gameState.availableMatches
+            .filter { match in
+                // If there's a second player, only show if current user is one of the players
+                if let player2ID = match.player2ID {
+                    return match.player1ID == cloudKit.currentUser?.id ||
+                           player2ID == cloudKit.currentUser?.id
+                }
+                // If no second player, show the match
+                return true
+            }
+            .sorted { m1, m2 in
+                (m1.modificationDate ?? .distantPast) > (m2.modificationDate ?? .distantPast)
+            }
     }
 
     var body: some View {
