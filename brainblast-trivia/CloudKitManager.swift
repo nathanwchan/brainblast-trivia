@@ -136,12 +136,7 @@ class CloudKitManager: ObservableObject {
             throw NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "User not authenticated"])
         }
         
-        // First ensure the shared zone exists
-        try? await database.save(sharedZone)
-        
-        // Create record in the shared zone
-        let recordID = CKRecord.ID(recordName: UUID().uuidString, zoneID: sharedZone.zoneID)
-        let record = CKRecord(recordType: "Match", recordID: recordID)
+        let record = CKRecord(recordType: "Match")
         record["player1ID"] = currentUser.id
         record["currentQuestionID"] = questionID
         record["previousQuestions"] = [questionID]
@@ -151,14 +146,8 @@ class CloudKitManager: ObservableObject {
         record["isPlayer1Turn"] = true
         record["isCompleted"] = false
         
-        // Create share
-        let shareRecord = CKShare(rootRecord: record)
-        shareRecord.publicPermission = .readWrite
-        
-        // Save both the record and share together
-        let (_, _) = try await database.modifyRecords(saving: [record, shareRecord], deleting: [])
-        
-        return Match(record: record)
+        let savedRecord = try await database.save(record)
+        return Match(record: savedRecord)
     }
 
     func updateMatch(_ match: Match) async throws {
