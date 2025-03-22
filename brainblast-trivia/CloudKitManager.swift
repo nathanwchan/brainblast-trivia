@@ -16,6 +16,11 @@ class CloudKitManager: ObservableObject {
     // Add cache for user names
     private var userNameCache: [String: String] = [:]
     
+    // Add new property for shared zone
+    private lazy var sharedZone: CKRecordZone = {
+        return CKRecordZone(zoneName: "SharedMatches")
+    }()
+
     private init() {
         self.container = CKContainer(identifier: "iCloud.com.natechan.brainblast-2")
         self.database = container.publicCloudDatabase
@@ -131,7 +136,12 @@ class CloudKitManager: ObservableObject {
             throw NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "User not authenticated"])
         }
         
-        let record = CKRecord(recordType: "Match")
+        // First ensure the shared zone exists
+        try? await database.save(sharedZone)
+        
+        // Create record in the shared zone
+        let recordID = CKRecord.ID(recordName: UUID().uuidString, zoneID: sharedZone.zoneID)
+        let record = CKRecord(recordType: "Match", recordID: recordID)
         record["player1ID"] = currentUser.id
         record["currentQuestionID"] = questionID
         record["previousQuestions"] = [questionID]
@@ -141,10 +151,16 @@ class CloudKitManager: ObservableObject {
         record["isPlayer1Turn"] = true
         record["isCompleted"] = false
         
-        let savedRecord = try await database.save(record)
-        return Match(record: savedRecord)
+        // Create share
+        let shareRecord = CKShare(rootRecord: record)
+        shareRecord.publicPermission = .readWrite
+        
+        // Save both the record and share together
+        let (_, _) = try await database.modifyRecords(saving: [record, shareRecord], deleting: [])
+        
+        return Match(record: record)
     }
-    
+
     func updateMatch(_ match: Match) async throws {
         print("[CloudKit] Updating match with ID: \(match.id)")
         print("[CloudKit] Player2ID being set to: \(match.player2ID ?? "nil")")
